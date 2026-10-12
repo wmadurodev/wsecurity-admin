@@ -1,4 +1,4 @@
-package dev.wmaduro.wsecurity.admin.session;
+package dev.wmaduro.wsecurity.admin.testsupport;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,9 +16,10 @@ import org.springframework.test.context.DynamicPropertySource;
 
 /** Base dos testes de login: BFF real numa porta aleatória e IdP/autorização simulados no WireMock. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
-abstract class AbstractLoginIT {
+public abstract class AbstractLoginIT {
 
-    static final WireMockServer WIREMOCK = new WireMockServer(options().dynamicPort());
+    public static final WireMockServer WIREMOCK =
+            new WireMockServer(options().dynamicPort().gzipDisabled(true));
 
     static {
         WIREMOCK.start();
@@ -32,39 +33,39 @@ abstract class AbstractLoginIT {
     }
 
     @LocalServerPort
-    int port;
+    protected int port;
 
-    final TestIdp idp = new TestIdp(WIREMOCK);
+    protected final TestIdp idp = new TestIdp(WIREMOCK);
 
     @BeforeEach
-    void stubApis() {
+    protected void stubApis() {
         idp.stubDefaults();
     }
 
-    Browser browser() {
+    protected Browser browser() {
         return new Browser("http://localhost:" + port);
     }
 
     /** Opções do login simulado. */
-    record Login(boolean admin, long expiresIn, String issuer, List<String> amr) {
+    public record Login(boolean admin, long expiresIn, String issuer, List<String> amr) {
 
-        static Login asAdmin() {
+        public static Login asAdmin() {
             return new Login(true, 300, null, List.of("pwd"));
         }
 
-        static Login asCommonUser() {
+        public static Login asCommonUser() {
             return new Login(false, 300, null, List.of("pwd"));
         }
 
-        Login expiringIn(long seconds) {
+        public Login expiringIn(long seconds) {
             return new Login(admin, seconds, issuer, amr);
         }
 
-        Login issuedBy(String otherIssuer) {
+        public Login issuedBy(String otherIssuer) {
             return new Login(admin, expiresIn, otherIssuer, amr);
         }
 
-        Login withAmr(List<String> methods) {
+        public Login withAmr(List<String> methods) {
             return new Login(admin, expiresIn, issuer, methods);
         }
     }
@@ -73,7 +74,7 @@ abstract class AbstractLoginIT {
      * Faz o login completo a partir de uma página: redireciona ao IdP, recua o escopo para usuário comum e devolve a
      * resposta do retorno (callback) do login.
      */
-    HttpResponse<String> login(Browser browser, String page, Login login) {
+    protected HttpResponse<String> login(Browser browser, String page, Login login) {
         HttpResponse<String> response = browser.get(page);
         assertThat(response.statusCode()).isEqualTo(302);
         assertThat(Browser.location(response)).endsWith("/oauth2/authorization/wsecurity");
@@ -106,7 +107,7 @@ abstract class AbstractLoginIT {
     }
 
     /** Segue o início do login até o IdP e devolve os parâmetros do pedido de autorização. */
-    Map<String, String> authorize(Browser browser, String start) {
+    protected Map<String, String> authorize(Browser browser, String start) {
         HttpResponse<String> response = browser.get(start);
         assertThat(response.statusCode()).isEqualTo(302);
         String location = Browser.location(response);

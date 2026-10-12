@@ -4,8 +4,8 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 03 (login e sessão)**. Login OIDC com recuo de escopo, sessão, renovação de tokens e
-> logout funcionam; a SPA ainda é provisória (mostra a sessão). Proxy das APIs e telas entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
+> Estado: **fase 0004, prompt 04 (proxy)**. Login, sessão e o proxy das APIs funcionam; a SPA ainda é provisória
+> (mostra a sessão). As telas entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura
 
@@ -155,3 +155,42 @@ falha se faltarem `WSECURITY_ADMIN_IDP_ISSUER`, `WSECURITY_ADMIN_PUBLIC_URI`, `W
 | O IdP mostra erro de `redirect_uri` | O cliente do console não tem a origem usada (porta do console ou 5174). Rode `make configurar-idp` no `wsecurity-infra`. |
 | Login volta para `/login-error` | O `iss` do ID token não é `WSECURITY_ADMIN_IDP_ISSUER`, ou o IdP recusou o login. Confira o emissor e os logs do console. |
 | `POST` responde `403` | Falta o cabeçalho `X-XSRF-TOKEN` com o valor do cookie `XSRF-TOKEN`. |
+
+## Proxy das APIs
+
+A SPA chama as APIs só pelo BFF, na mesma origem. O proxy repassa **apenas** as rotas de 04 §3.2 da especificação
+(`ProxyRoutes`, conferida contra a tabela por `ProxyRoutesSpecificationTest`):
+
+| Rota no console | Destino |
+|-----------------|---------|
+| `/bff/api/idp/**` | `${IDP}/api/admin/v1/**` (todas exigem `wsecurity.admin`) |
+| `/bff/api/authz/admin/**` | `${AZ}/api/admin/**` (exigem `wsecurity.admin`) |
+| `/bff/api/authz/v1/**` | `${AZ}/api/v1/**` (área do tenant: a autorização decide) |
+| `GET /bff/users/{sub}/access` | tenants, papéis e permissões de um usuário, pelo cliente de serviço (`wsecurity.authz`); só para `wsecurity.admin` |
+
+- **Cabeçalhos:** entram só `Content-Type`, `Accept`, `If-Match` e `If-None-Match`, mais o `Authorization` com o token
+  da sessão (renovado se preciso). Saem só `Content-Type`, `ETag`, `Location` (reescrito para `/bff/api/...`) e
+  paginação. `Cookie`, `Set-Cookie` e qualquer outro cabeçalho são descartados nos dois sentidos.
+- **Recusas sem chamar a API:** rota fora da lista → `404`; rota da plataforma sem `wsecurity.admin` → `403`;
+  caminho com `..`, `//`, `;`, `\` ou `%2F`/`%5C`/`%2E`/`%25` → `400`; corpo acima de 1 MiB → `413`.
+- **Erros:** os Problem Details das APIs passam sem alteração; falha de conexão → `502` (`…/upstream-unavailable`);
+  tempo esgotado (10 s, `WSECURITY_ADMIN_PROXY_READ_TIMEOUT`) → `504` (`…/upstream-timeout`).
+- **Registro de acesso:** cada escrita (`POST`, `PUT`, `PATCH`, `DELETE`) gera um log com `sub`, método, rota, status
+  e duração, sem corpo, token ou cookie (logger `dev.wmaduro.wsecurity.admin.proxy.access`).
+- **Acessos do usuário:** sem `WSECURITY_ADMIN_SERVICE_CLIENT_ID`/`_SECRET`, `GET /bff/users/{sub}/access` responde
+  `503`. O token do cliente de serviço fica só em memória no servidor e não é usado em nenhuma outra rota.
+
+### Latência do proxy (RNF-DES-01)
+
+`scripts/medir-proxy.sh` compara `GET /bff/api/authz/admin/v1/tenants` pelo console com a chamada direta à
+autorização. Medição de 2026-10-12, ambiente local (`make up-app`, perfil `dev`), 300 requisições sequenciais por lado:
+
+| | p50 | p95 |
+|---|---|---|
+| Direto na autorização | 3,8 ms | 5,6 ms |
+| Pelo BFF | 8,9 ms | 14,1 ms |
+| **Acréscimo do BFF (p95)** | | **8,5 ms** (limite: 20 ms) |
+
+```bash
+TOKEN=$(cd ../wsecurity-infra && make -s token-admin) COOKIES=<cookie jar com a sessão> ./scripts/medir-proxy.sh
+```

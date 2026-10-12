@@ -1,4 +1,4 @@
-package dev.wmaduro.wsecurity.admin.session;
+package dev.wmaduro.wsecurity.admin.testsupport;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -27,24 +27,24 @@ import java.util.UUID;
  * IdP e autorização simulados no WireMock: JWKS, tokens (código e refresh), userinfo, revogação e as APIs
  * {@code /api/v1/me/**}. Os tokens de acesso são opacos para o BFF; o ID token é um JWT assinado pela chave do JWKS.
  */
-final class TestIdp {
+public final class TestIdp {
 
-    static final String CLIENT_ID = "console-de-teste";
-    static final String SUBJECT = "c0ffee00-0000-4000-8000-000000000001";
+    public static final String CLIENT_ID = "console-de-teste";
+    public static final String SUBJECT = "c0ffee00-0000-4000-8000-000000000001";
 
     private static final RSAKey KEY = generateKey();
 
     private final WireMockServer server;
 
-    TestIdp(WireMockServer server) {
+    public TestIdp(WireMockServer server) {
         this.server = server;
     }
 
-    String baseUrl() {
+    public String baseUrl() {
         return server.baseUrl();
     }
 
-    void stubDefaults() {
+    public void stubDefaults() {
         server.resetAll();
         server.stubFor(get(urlEqualTo("/oauth2/jwks")).willReturn(okJson(new JWKSet(KEY.toPublicJWK()).toString())));
         server.stubFor(get(urlEqualTo("/userinfo"))
@@ -65,20 +65,20 @@ final class TestIdp {
     }
 
     /** Resposta do endpoint de token para um código: tokens com os escopos, validade e emissor indicados. */
-    void stubCode(String code, Tokens tokens) {
+    public void stubCode(String code, Tokens tokens) {
         server.stubFor(post(urlPathEqualTo("/oauth2/token"))
                 .withRequestBody(containing("grant_type=authorization_code"))
                 .withRequestBody(containing("code=" + code))
                 .willReturn(okJson(tokens.json())));
     }
 
-    void stubRefresh(Tokens tokens) {
+    public void stubRefresh(Tokens tokens) {
         server.stubFor(post(urlPathEqualTo("/oauth2/token"))
                 .withRequestBody(containing("grant_type=refresh_token"))
                 .willReturn(okJson(tokens.json())));
     }
 
-    void stubRefreshRefused() {
+    public void stubRefreshRefused() {
         server.stubFor(post(urlPathEqualTo("/oauth2/token"))
                 .withRequestBody(containing("grant_type=refresh_token"))
                 .willReturn(aResponse()
@@ -87,12 +87,12 @@ final class TestIdp {
                         .withBody("{\"error\":\"invalid_grant\"}")));
     }
 
-    WireMockServer server() {
+    public WireMockServer server() {
         return server;
     }
 
     /** Tokens devolvidos pelo IdP simulado. */
-    record Tokens(
+    public record Tokens(
             String accessToken,
             String refreshToken,
             String scope,
@@ -101,14 +101,14 @@ final class TestIdp {
             String nonce,
             List<String> amr) {
 
-        String json() {
+        public String json() {
             return "{\"access_token\":\"" + accessToken + "\",\"token_type\":\"Bearer\",\"expires_in\":" + expiresIn
                     + ",\"scope\":\"" + scope + "\",\"refresh_token\":\"" + refreshToken + "\",\"id_token\":\""
                     + idToken(issuer, nonce, amr) + "\"}";
         }
     }
 
-    static String idToken(String issuer, String nonce, List<String> amr) {
+    public static String idToken(String issuer, String nonce, List<String> amr) {
         Instant now = Instant.now();
         JWTClaimsSet.Builder claims = new JWTClaimsSet.Builder()
                 .issuer(issuer)

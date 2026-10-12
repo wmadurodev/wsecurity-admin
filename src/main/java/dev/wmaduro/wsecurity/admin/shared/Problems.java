@@ -21,6 +21,27 @@ public final class Problems {
     /** A sessão terminou (idade máxima, renovação recusada pelo IdP). */
     public static final String SESSION_EXPIRED = "session-expired";
 
+    /** Rota da plataforma sem {@code wsecurity.admin} na sessão. */
+    public static final String FORBIDDEN = "forbidden";
+
+    /** Rota fora da lista do proxy (RF-BFF-02). */
+    public static final String NOT_FOUND = "not-found";
+
+    /** Caminho com sequências ambíguas ou perigosas (RNF-SEG-07). */
+    public static final String INVALID_PATH = "invalid-path";
+
+    /** Corpo acima do limite do proxy (RNF-SEG-07). */
+    public static final String PAYLOAD_TOO_LARGE = "payload-too-large";
+
+    /** Falha de conexão com a API (RF-BFF-04). */
+    public static final String UPSTREAM_UNAVAILABLE = "upstream-unavailable";
+
+    /** A API não respondeu no tempo limite (RF-BFF-04). */
+    public static final String UPSTREAM_TIMEOUT = "upstream-timeout";
+
+    /** Credenciais do cliente de serviço ausentes (RF-BFF-03). */
+    public static final String SERVICE_UNAVAILABLE = "service-unavailable";
+
     private Problems() {}
 
     public static URI type(String slug) {

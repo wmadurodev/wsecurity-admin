@@ -2,6 +2,8 @@ package dev.wmaduro.wsecurity.admin.session;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.wmaduro.wsecurity.admin.testsupport.AbstractLoginIT;
+import dev.wmaduro.wsecurity.admin.testsupport.Browser;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;

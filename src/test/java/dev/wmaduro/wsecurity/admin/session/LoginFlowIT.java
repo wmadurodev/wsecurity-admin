@@ -8,6 +8,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.wmaduro.wsecurity.admin.testsupport.AbstractLoginIT;
+import dev.wmaduro.wsecurity.admin.testsupport.Browser;
+import dev.wmaduro.wsecurity.admin.testsupport.TestIdp;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;

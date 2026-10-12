@@ -48,7 +48,7 @@ class SessionController {
     SessionResponse session(
             @AuthenticationPrincipal OidcUser user, HttpServletRequest request, HttpServletResponse response) {
         OAuth2AuthorizedClient client = tokens.authorizedClient(request, response);
-        boolean platformAdmin = client.getAccessToken().getScopes().contains(OAuthClientConfiguration.ADMIN_SCOPE);
+        boolean platformAdmin = SessionTokens.isPlatformAdmin(client);
         List<String> amr = user.getClaimAsStringList("amr");
         Optional<List<TenantAccessClient.AdministrableTenant>> tenants =
                 tenantAccess.administrableTenants(client.getAccessToken().getTokenValue());

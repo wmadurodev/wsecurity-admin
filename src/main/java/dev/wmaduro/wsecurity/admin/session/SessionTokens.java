@@ -55,6 +55,11 @@ public class SessionTokens {
         }
     }
 
+    /** A sessão tem {@code wsecurity.admin} (administrador da plataforma, RF-AUT-02). */
+    public static boolean isPlatformAdmin(OAuth2AuthorizedClient client) {
+        return client.getAccessToken().getScopes().contains(OAuthClientConfiguration.ADMIN_SCOPE);
+    }
+
     /** Access token da sessão atual, renovado se preciso. */
     public String accessToken(HttpServletRequest request, HttpServletResponse response) {
         return authorizedClient(request, response).getAccessToken().getTokenValue();
