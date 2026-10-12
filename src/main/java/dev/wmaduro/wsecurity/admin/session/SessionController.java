@@ -1,5 +1,6 @@
 package dev.wmaduro.wsecurity.admin.session;
 
+import dev.wmaduro.wsecurity.admin.shared.AdminProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
@@ -18,8 +19,16 @@ class SessionController {
     private final SessionTokens tokens;
     private final TenantAccessClient tenantAccess;
     private final SessionLifetime lifetime;
+    private final String accountUrl;
 
-    SessionController(SessionTokens tokens, TenantAccessClient tenantAccess, SessionLifetime lifetime) {
+    SessionController(
+            SessionTokens tokens,
+            TenantAccessClient tenantAccess,
+            SessionLifetime lifetime,
+            AdminProperties properties) {
+        this.accountUrl = OAuthClientConfiguration.withoutTrailingSlash(
+                        properties.idp().issuer().toString())
+                + "/account";
         this.tokens = tokens;
         this.tenantAccess = tenantAccess;
         this.lifetime = lifetime;
@@ -33,6 +42,7 @@ class SessionController {
      * @param expiresAt quando a sessão expira, se não houver uso (inatividade ou idade máxima)
      * @param tenants tenants com alguma permissão {@code core.*}
      * @param tenantsAvailable {@code false} se a API da autorização não respondeu; {@code tenants} vem vazio
+     * @param accountUrl área "minha conta" do IdP, para ativar o segundo fator (RF-AUT-08)
      */
     record SessionResponse(
             String sub,
@@ -42,7 +52,8 @@ class SessionController {
             boolean mfa,
             Instant expiresAt,
             List<TenantAccessClient.AdministrableTenant> tenants,
-            boolean tenantsAvailable) {}
+            boolean tenantsAvailable,
+            String accountUrl) {}
 
     @GetMapping(BffPaths.SESSION)
     SessionResponse session(
@@ -60,6 +71,7 @@ class SessionController {
                 amr != null && amr.contains("otp"),
                 lifetime.expiresAt(request.getSession()),
                 tenants.orElse(List.of()),
-                tenants.isPresent());
+                tenants.isPresent(),
+                accountUrl);
     }
 }

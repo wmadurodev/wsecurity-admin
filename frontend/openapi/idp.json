@@ -1,0 +1,1496 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "wsecurity — API administrativa",
+    "description": "Administração de usuários, aplicações clientes, escopos e chaves.",
+    "version": "v1"
+  },
+  "security": [
+    {
+      "wsecurity-oauth2": [
+        "wsecurity.admin"
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "name": "Usuários",
+      "description": "Administração de contas de usuário"
+    },
+    {
+      "name": "Clientes",
+      "description": "Aplicações clientes OAuth2"
+    },
+    {
+      "name": "Escopos",
+      "description": "Catálogo de escopos exibidos no consentimento"
+    },
+    {
+      "name": "Chaves",
+      "description": "Chaves de assinatura de tokens"
+    }
+  ],
+  "paths": {
+    "/api/admin/v1/clients/{clientId}": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Consulta um cliente",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Substitui a configuração do cliente (o tipo não pode mudar)",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientWithSecret"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users": {
+      "get": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Busca usuários por e-mail, nome e status (paginado)",
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING_VERIFICATION",
+                "ACTIVE",
+                "DISABLED",
+                "DELETED"
+              ]
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Cria um usuário (com senha inicial ou convite por e-mail)",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}/unlock": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Remove o bloqueio temporário por tentativas",
+        "operationId": "unlock",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}/password-reset": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Força a redefinição de senha e envia o link ao usuário",
+        "operationId": "forcePasswordReset",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}/mfa/reset": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Remove o segundo fator do usuário (perda do dispositivo e dos códigos de recuperação)",
+        "operationId": "resetMfa",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}/enable": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Reativa o usuário",
+        "operationId": "enable",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}/disable": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Desativa o usuário e revoga sessões e tokens",
+        "operationId": "disable",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/scopes": {
+      "get": {
+        "tags": [
+          "Escopos"
+        ],
+        "summary": "Lista os escopos",
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Scope"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Escopos"
+        ],
+        "summary": "Cria um escopo",
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScope"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/keys/rotate": {
+      "post": {
+        "tags": [
+          "Chaves"
+        ],
+        "summary": "Rotação imediata: gera (se preciso) e ativa a próxima chave; a anterior é aposentada",
+        "operationId": "rotate",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/clients": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Lista os clientes (paginado, ordenado pelo nome)",
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseClientResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Registra um cliente; o segredo (se houver) aparece somente nesta resposta",
+        "operationId": "create_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientWithSecret"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/clients/{clientId}/secrets": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Lista os segredos (somente metadados)",
+        "operationId": "secrets",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Gera um novo segredo; os anteriores expiram após o período de transição",
+        "operationId": "rotateSecret",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RotatedSecret"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/clients/{clientId}/enable": {
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Reativa o cliente",
+        "operationId": "enable_1",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/clients/{clientId}/disable": {
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Desativa o cliente e revoga seus tokens",
+        "operationId": "disable_1",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}": {
+      "get": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Consulta um usuário",
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Exclusão lógica; os dados pessoais são anonimizados após a carência",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Atualiza dados do usuário; aceita If-Match com a versão atual",
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/scopes/{name}": {
+      "patch": {
+        "tags": [
+          "Escopos"
+        ],
+        "summary": "Altera descrições ou desativa um escopo (escopos padrão são imutáveis)",
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScope"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/users/{id}/events": {
+      "get": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Eventos de auditoria do usuário, do mais recente para o mais antigo",
+        "operationId": "events",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAuditEventResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/keys": {
+      "get": {
+        "tags": [
+          "Chaves"
+        ],
+        "summary": "Lista as chaves (kid, estado e datas)",
+        "operationId": "list_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KeyResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/clients/{clientId}/secrets/{secretId}": {
+      "delete": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Revoga imediatamente um segredo",
+        "operationId": "revokeSecret",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "secretId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClientRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "CONFIDENTIAL"
+            ]
+          },
+          "authenticationMethods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "grantTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "postLogoutRedirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "firstParty": {
+            "type": "boolean"
+          },
+          "allowedAdminScope": {
+            "type": "boolean"
+          },
+          "revokeOnLogout": {
+            "type": "boolean"
+          },
+          "accessTokenTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "refreshTokenTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "refreshTokenIdleTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "authorizationCodeTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "jwkSetUrl": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "ClientResponse": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "CONFIDENTIAL"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "authenticationMethods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "grantTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "postLogoutRedirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "firstParty": {
+            "type": "boolean"
+          },
+          "allowedAdminScope": {
+            "type": "boolean"
+          },
+          "revokeOnLogout": {
+            "type": "boolean"
+          },
+          "accessTokenTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "refreshTokenTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "refreshTokenIdleTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "authorizationCodeTtl": {
+            "type": "string",
+            "format": "duration"
+          },
+          "jwkSetUrl": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "clientIdIssuedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ClientWithSecret": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/ClientResponse"
+          },
+          "clientSecret": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateUser": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "minLength": 0
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 0
+          },
+          "locale": {
+            "type": "string",
+            "pattern": "pt-BR|en"
+          },
+          "wsecurityAdmin": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "email",
+          "name"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "givenName": {
+            "type": "string"
+          },
+          "familyName": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "zoneinfo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_VERIFICATION",
+              "ACTIVE",
+              "DISABLED",
+              "DELETED"
+            ]
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          },
+          "wsecurityAdmin": {
+            "type": "boolean"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CreateScope": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "descriptionPt": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "descriptionEn": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "descriptionEn",
+          "descriptionPt",
+          "name"
+        ]
+      },
+      "Scope": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "descriptionPt": {
+            "type": "string"
+          },
+          "descriptionEn": {
+            "type": "string"
+          },
+          "standard": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "KeyResponse": {
+        "type": "object",
+        "properties": {
+          "kid": {
+            "type": "string"
+          },
+          "algorithm": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEXT",
+              "ACTIVE",
+              "RETIRED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retiredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RotatedSecret": {
+        "type": "object",
+        "properties": {
+          "clientSecret": {
+            "type": "string"
+          },
+          "previousSecretsExpireAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateUser": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "minLength": 0
+          },
+          "givenName": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "familyName": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "locale": {
+            "type": "string",
+            "pattern": "pt-BR|en"
+          },
+          "zoneinfo": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 0
+          },
+          "wsecurityAdmin": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateScope": {
+        "type": "object",
+        "properties": {
+          "descriptionPt": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "descriptionEn": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PageResponseUserResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AuditEventResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "LOGIN_SUCCESS",
+              "LOGIN_FAILURE",
+              "ACCOUNT_LOCKED",
+              "ACCOUNT_UNLOCKED",
+              "LOGOUT",
+              "TOKEN_ISSUED",
+              "TOKEN_REFRESHED",
+              "TOKEN_REVOKED",
+              "REFRESH_TOKEN_REUSE_DETECTED",
+              "PASSWORD_CHANGED",
+              "PASSWORD_RESET_REQUESTED",
+              "PASSWORD_RESET_COMPLETED",
+              "EMAIL_VERIFIED",
+              "USER_CREATED",
+              "USER_UPDATED",
+              "USER_DISABLED",
+              "USER_DELETED",
+              "CLIENT_CREATED",
+              "CLIENT_UPDATED",
+              "CLIENT_SECRET_ROTATED",
+              "KEY_ROTATED",
+              "MFA_ENABLED",
+              "MFA_DISABLED"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILURE"
+            ]
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "userAgent": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "PageResponseAuditEventResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PageResponseClientResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClientResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SecretResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "wsecurity-oauth2": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "http://localhost:19000/oauth2/token",
+            "scopes": {
+              "wsecurity.admin": "Administração do wsecurity"
+            }
+          },
+          "authorizationCode": {
+            "authorizationUrl": "http://localhost:19000/oauth2/authorize",
+            "tokenUrl": "http://localhost:19000/oauth2/token",
+            "scopes": {
+              "wsecurity.admin": "Administração do wsecurity"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,8 +4,8 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 04 (proxy)**. Login, sessão e o proxy das APIs funcionam; a SPA ainda é provisória
-> (mostra a sessão). As telas entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
+> Estado: **fase 0004, prompt 05 (base da SPA)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
+> padrões de tela) funcionam; as telas de cada área entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura
 
@@ -194,3 +194,23 @@ autorização. Medição de 2026-10-12, ambiente local (`make up-app`, perfil `d
 ```bash
 TOKEN=$(cd ../wsecurity-infra && make -s token-admin) COOKIES=<cookie jar com a sessão> ./scripts/medir-proxy.sh
 ```
+
+## SPA
+
+Estrutura (`frontend/src`, RNF-ARQ-03):
+
+| Pasta | Conteúdo |
+|-------|----------|
+| `routes/` | Rotas do React Router: `/platform/**` (exige `wsecurity.admin`) e `/t/:slug/**` (exige o tenant na sessão ou `wsecurity.admin`), páginas 403 e 404 e a página inicial de RF-NAV-03. Cada área é carregada sob demanda. |
+| `features/<área>/` | Telas de cada área (`users`, `clients`, `catalog`, `tenants`, `tenant`, `platform`, `home`). Uma área não importa os arquivos internos de outra. |
+| `components/` | Padrões de tela: `DataTable` (paginação no servidor; busca, filtros e ordenação na URL), `FormField` e `applyApiErrors` (erros da API no campo), `ConfirmDialog` (com confirmação forte), `showProblem` (notificação com `title`, `detail` e `traceId`), `ConflictNotice` (`409`/`412`), `PermissionGate`, `DateTime`, `StatusBadge` e `CopyOnceSecret`. O layout fica em `components/layout`. |
+| `components/ui/` | Componentes no estilo shadcn/ui. Diálogo e seleção são nativos (`<dialog>`, `<select>`), porque os do Radix injetam `<style>` e quebrariam a CSP (DEC-15). |
+| `lib/` | Cliente HTTP (`lib/api`: `idp.*` e `authz.*` tipados pelos contratos, CSRF, `If-Match`, `ApiError`), sessão (`useSession`, `can`, `isPlatformAdmin`), preferências de interface e formatação. |
+
+- **Contratos:** os tipos das APIs vêm de `frontend/openapi/*.json` (`npm run openapi:update`; veja o README da pasta).
+- **Sessão:** a SPA lê `/bff/session`. Sem acesso administrativo, vai para `/no-access`. Um `401` em qualquer chamada
+  mostra "Sua sessão expirou"; "entrar de novo" recarrega a página, e o BFF faz o login e volta para a mesma tela.
+- **Armazenamento:** só preferências de interface (menu recolhido, tamanho de página) em `localStorage`; nada de
+  sessão, token ou resposta de API.
+- **Pacote inicial:** o build falha se o pacote inicial passar de 300 KiB gzip (`scripts/check-bundle.mjs`). Na
+  medição de 2026-10-12, ele tinha 135 KiB.

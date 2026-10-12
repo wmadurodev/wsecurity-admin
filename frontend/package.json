@@ -8,12 +8,14 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/check-bundle.mjs",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "openapi:update": "node scripts/openapi-update.mjs",
+    "openapi:generate": "openapi-typescript openapi/idp.json -o src/lib/api/types/idp.ts && openapi-typescript openapi/authz.json -o src/lib/api/types/authz.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
@@ -54,11 +56,15 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
-    "vitest": "5.0.4"
+    "vitest": "5.0.4",
+    "openapi-typescript": "7.13.0"
   },
   "overrides": {
     "eslint-plugin-jsx-a11y": {
       "eslint": "$eslint"
+    },
+    "openapi-typescript": {
+      "typescript": "$typescript"
     }
   }
 }

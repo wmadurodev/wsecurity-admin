@@ -18,6 +18,8 @@ export interface Session {
   expiresAt: string
   tenants: SessionTenant[]
   tenantsAvailable: boolean
+  /** Área "minha conta" do IdP, para ativar o segundo fator (RF-AUT-08). */
+  accountUrl: string
 }
 
 /** A sessão do console terminou ou não existe (`401`). */
@@ -80,6 +82,16 @@ export function signInAgain(dev: boolean = import.meta.env.DEV): void {
   if (dev) {
     window.location.assign(LOGIN_URL)
   } else {
+    // A página exige sessão no BFF: ele guarda a rota atual, faz o login e volta para ela.
     window.location.reload()
   }
+}
+
+/** Permissão `<funcionalidade>:read|write` (0002). `write` inclui `read`. */
+export function hasPermission(granted: readonly string[], permission: string): boolean {
+  if (granted.includes(permission)) {
+    return true
+  }
+  const [feature, access] = permission.split(':')
+  return access === 'read' && granted.includes(`${feature}:write`)
 }

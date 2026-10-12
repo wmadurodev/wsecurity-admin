@@ -4,3 +4,4 @@ dist/
 coverage/
 openapi/
 package-lock.json
+src/lib/api/types/

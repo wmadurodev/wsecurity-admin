@@ -38,6 +38,7 @@ class LoginFlowIT extends AbstractLoginIT {
                 .contains("\"mfa\":false")
                 .contains("\"slug\":\"acme\"")
                 .contains("\"tenantsAvailable\":true")
+                .contains("\"accountUrl\":\"" + idp.baseUrl() + "/account\"")
                 .doesNotContain("\"slug\":\"loja\"");
     }
 
