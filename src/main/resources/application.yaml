@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: wsecurity-admin
+  profiles:
+    default: dev
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  thymeleaf:
+    # Templates só para as páginas do BFF fora da SPA (RF-AUT-07).
+    check-template-location: false
+
+server:
+  port: ${WSECURITY_ADMIN_PORT:9200}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+    include-binding-errors: never
+  # O Tomcat (RemoteIpValve) só aceita X-Forwarded-* vindos de proxies confiáveis (por padrão, redes privadas e
+  # loopback).
+  forward-headers-strategy: native
+
+management:
+  server:
+    port: ${WSECURITY_ADMIN_MANAGEMENT_PORT:9201}
+  endpoints:
+    web:
+      exposure:
+        # RNF-SEG-06: só health e info, e só na porta de gerenciamento.
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        # RNF-OPE-02: a readiness não depende das APIs (o console sobe e mostra o erro se o IdP estiver fora do ar).
+        readiness:
+          include: readinessState
+
+# Configuração do console (04 §5). Padrões de desenvolvimento local; em prod, application-prod.yaml exige as variáveis.
+wsecurity:
+  admin:
+    idp:
+      issuer: ${WSECURITY_ADMIN_IDP_ISSUER:http://localhost:9000}
+      internal-uri: ${WSECURITY_ADMIN_IDP_INTERNAL_URI:http://localhost:9000}
+    authz:
+      uri: ${WSECURITY_ADMIN_AUTHZ_URI:http://localhost:9100}
+    client:
+      id: ${WSECURITY_ADMIN_CLIENT_ID:}
+      secret: ${WSECURITY_ADMIN_CLIENT_SECRET:}
+    service-client:
+      id: ${WSECURITY_ADMIN_SERVICE_CLIENT_ID:}
+      secret: ${WSECURITY_ADMIN_SERVICE_CLIENT_SECRET:}
+    public-uri: ${WSECURITY_ADMIN_PUBLIC_URI:http://localhost:9200}
+    session:
+      idle-timeout: ${WSECURITY_ADMIN_SESSION_IDLE_TIMEOUT:30m}
+      max-age: ${WSECURITY_ADMIN_SESSION_MAX_AGE:12h}
+    proxy:
+      connect-timeout: ${WSECURITY_ADMIN_PROXY_CONNECT_TIMEOUT:2s}
+      read-timeout: ${WSECURITY_ADMIN_PROXY_READ_TIMEOUT:10s}

@@ -1,0 +1,5 @@
+# Perfil de desenvolvimento local (RNF-OPE-01): IdP em http://localhost:9000 e autorização em http://localhost:9100,
+# como sobem pelo code/wsecurity-infra. Logs legíveis.
+logging:
+  level:
+    dev.wmaduro.wsecurity: DEBUG
