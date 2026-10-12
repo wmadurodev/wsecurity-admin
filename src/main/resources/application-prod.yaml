@@ -1,12 +1,6 @@
-# Perfil de produção (RNF-OPE-01): sem padrões locais. A inicialização falha (ProductionConfigurationCheck) se o
-# cliente do console, o emissor do IdP ou o endereço público não estiverem definidos. Logs em JSON (RNF-SEG-10).
-wsecurity:
-  admin:
-    idp:
-      issuer: ${WSECURITY_ADMIN_IDP_ISSUER:}
-      internal-uri: ${WSECURITY_ADMIN_IDP_INTERNAL_URI:${WSECURITY_ADMIN_IDP_ISSUER:}}
-    public-uri: ${WSECURITY_ADMIN_PUBLIC_URI:}
-
+# Perfil de produção (RNF-OPE-01): sem padrões locais. A inicialização falha se o cliente do console, o emissor do IdP,
+# o endereço público ou a API da autorização não estiverem definidos (ProductionConfigurationCheck e validação de
+# AdminProperties). Logs em JSON (RNF-SEG-10).
 logging:
   structured:
     format:

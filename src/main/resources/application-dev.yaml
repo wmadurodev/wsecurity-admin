@@ -1,5 +1,15 @@
-# Perfil de desenvolvimento local (RNF-OPE-01): IdP em http://localhost:9000 e autorização em http://localhost:9100,
-# como sobem pelo code/wsecurity-infra. Logs legíveis.
+# Perfil de desenvolvimento local (RNF-OPE-01, RF-INF-03): padrões de 04 §5 para rodar o BFF na IDE, com o IdP em
+# http://localhost:9000 e a autorização em http://localhost:9100 (make up-app SEM_ADMIN=sim no wsecurity-infra).
+# As credenciais dos clientes do console vêm de code/wsecurity-infra/.local/console-admin.env (veja o README).
+wsecurity:
+  admin:
+    idp:
+      issuer: ${WSECURITY_ADMIN_IDP_ISSUER:http://localhost:9000}
+      internal-uri: ${WSECURITY_ADMIN_IDP_INTERNAL_URI:${WSECURITY_ADMIN_IDP_ISSUER:http://localhost:9000}}
+    authz:
+      uri: ${WSECURITY_ADMIN_AUTHZ_URI:http://localhost:9100}
+    public-uri: ${WSECURITY_ADMIN_PUBLIC_URI:http://localhost:9200}
+
 logging:
   level:
     dev.wmaduro.wsecurity: DEBUG

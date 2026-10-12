@@ -41,21 +41,22 @@ management:
         readiness:
           include: readinessState
 
-# Configuração do console (04 §5). Padrões de desenvolvimento local; em prod, application-prod.yaml exige as variáveis.
+# Configuração do console (04 §5). Os padrões locais ficam em application-dev.yaml; em prod, application-prod.yaml
+# exige as variáveis.
 wsecurity:
   admin:
     idp:
-      issuer: ${WSECURITY_ADMIN_IDP_ISSUER:http://localhost:9000}
-      internal-uri: ${WSECURITY_ADMIN_IDP_INTERNAL_URI:http://localhost:9000}
+      issuer: ${WSECURITY_ADMIN_IDP_ISSUER:}
+      internal-uri: ${WSECURITY_ADMIN_IDP_INTERNAL_URI:${WSECURITY_ADMIN_IDP_ISSUER:}}
     authz:
-      uri: ${WSECURITY_ADMIN_AUTHZ_URI:http://localhost:9100}
+      uri: ${WSECURITY_ADMIN_AUTHZ_URI:}
     client:
       id: ${WSECURITY_ADMIN_CLIENT_ID:}
       secret: ${WSECURITY_ADMIN_CLIENT_SECRET:}
     service-client:
       id: ${WSECURITY_ADMIN_SERVICE_CLIENT_ID:}
       secret: ${WSECURITY_ADMIN_SERVICE_CLIENT_SECRET:}
-    public-uri: ${WSECURITY_ADMIN_PUBLIC_URI:http://localhost:9200}
+    public-uri: ${WSECURITY_ADMIN_PUBLIC_URI:}
     session:
       idle-timeout: ${WSECURITY_ADMIN_SESSION_IDLE_TIMEOUT:30m}
       max-age: ${WSECURITY_ADMIN_SESSION_MAX_AGE:12h}

@@ -4,8 +4,8 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 01 (setup)**. O BFF sobe e serve uma SPA provisória. Login, proxy e telas entram nos
-> próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
+> Estado: **fase 0004, prompt 02 (ambiente local)**. O BFF sobe e serve uma SPA provisória, também pelo
+> `wsecurity-infra`. Login, proxy e telas entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura
 
@@ -50,13 +50,36 @@ asdf install
 docker build -t wsecurity-admin .
 ```
 
-Para rodar localmente no perfil `dev`:
+## Como rodar
+
+### Com o resto do sistema (Compose)
+
+O console faz parte do ambiente local do [`wsecurity-infra`](../wsecurity-infra/README.md):
 
 ```bash
+cd ../wsecurity-infra
+make up-app        # banco, Mailpit, IdP, autorização e o console em http://localhost:9200
+```
+
+`make up-app` cadastra no IdP os dois clientes do console (`make configurar-idp`) e entrega as credenciais ao
+contêiner por `.local/console-admin.env`.
+
+### Na IDE
+
+Suba o resto do sistema sem o console e rode o BFF no perfil `dev`. Os padrões desse perfil já apontam para o IdP em
+`http://localhost:9000` e para a autorização em `http://localhost:9100`. As credenciais dos clientes vêm do arquivo
+gerado pelo `wsecurity-infra`:
+
+```bash
+(cd ../wsecurity-infra && make up-app SEM_ADMIN=sim)    # ou, com o console no ar: make down-admin
+set -a; source ../wsecurity-infra/.local/console-admin.env; set +a
 java -jar target/wsecurity-admin-*.jar --spring.profiles.active=dev
 # http://localhost:9200/            → SPA
 # http://localhost:9201/actuator/health
 ```
+
+Na IDE, carregue o mesmo arquivo nas variáveis de ambiente da configuração de execução (no IntelliJ, "Environment
+variables" → arquivo `.env`, ou um plugin de EnvFile) e use o perfil `dev`.
 
 Para desenvolver a SPA com recarga automática: `cd frontend && npm run dev` (Vite em `http://localhost:5174`).
 
@@ -75,6 +98,20 @@ no `pom.xml`.
 
 ## Configuração
 
-Propriedades `wsecurity.admin.*` e variáveis `WSECURITY_ADMIN_*` (especificação, 04 §5). No perfil `prod`, a subida
+Propriedades `wsecurity.admin.*` e variáveis `WSECURITY_ADMIN_*` (especificação, 04 §5):
+
+| Variável | Padrão `dev` | Descrição |
+|----------|--------------|-----------|
+| `WSECURITY_ADMIN_IDP_ISSUER` | `http://localhost:9000` | `iss` esperado; base dos endpoints do IdP vistos pelo navegador |
+| `WSECURITY_ADMIN_IDP_INTERNAL_URI` | o emissor | Base do IdP usada pelo BFF (no Compose: `http://authentication:9000`) |
+| `WSECURITY_ADMIN_AUTHZ_URI` | `http://localhost:9100` | API da autorização (no Compose: `http://authorization:9100`) |
+| `WSECURITY_ADMIN_CLIENT_ID` / `_SECRET` | — | Cliente do console (`.local/console-admin.env`) |
+| `WSECURITY_ADMIN_SERVICE_CLIENT_ID` / `_SECRET` | — | Cliente de serviço do console (opcional) |
+| `WSECURITY_ADMIN_PUBLIC_URI` | `http://localhost:9200` | Endereço público do console |
+| `WSECURITY_ADMIN_SESSION_IDLE_TIMEOUT` / `_MAX_AGE` | `30m` / `12h` | Sessão do console |
+| `WSECURITY_ADMIN_PROXY_CONNECT_TIMEOUT` / `_READ_TIMEOUT` | `2s` / `10s` | Tempos limite do BFF para as APIs |
+| `WSECURITY_ADMIN_PORT` / `WSECURITY_ADMIN_MANAGEMENT_PORT` | `9200` / `9201` | Portas da aplicação e do Actuator |
+
+Fora do perfil `dev` não há padrões para os endereços. No perfil `prod`, a subida
 falha se faltarem `WSECURITY_ADMIN_IDP_ISSUER`, `WSECURITY_ADMIN_PUBLIC_URI`, `WSECURITY_ADMIN_CLIENT_ID` ou
 `WSECURITY_ADMIN_CLIENT_SECRET`.
