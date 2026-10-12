@@ -1,0 +1,28 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.properties
+
+# Node (instalado pelo frontend-maven-plugin) e SPA
+frontend/node/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+bin/
+
+# SO
+.DS_Store
+
+# Configuração local
+.env
+*.local.yml
+*.local.yaml
