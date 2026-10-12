@@ -25,23 +25,43 @@ class ApplicationIT {
     private int serverPort;
 
     @ParameterizedTest
-    @ValueSource(strings = {"/", "/qualquer/rota", "/platform/users/123"})
-    void servesSpaIndexForPageRoutes(String path) throws Exception {
+    @ValueSource(strings = {"/", "/qualquer/rota", "/platform/users/123", "/no-access"})
+    void pagesWithoutSessionGoToTheLogin(String path) throws Exception {
         HttpResponse<String> response = get(serverPort, path);
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        assertThat(response.headers().firstValue("Content-Type"))
-                .hasValueSatisfying(type -> assertThat(type).startsWith("text/html"));
-        assertThat(response.body()).contains("spa-de-teste");
+        assertThat(response.statusCode()).isEqualTo(302);
+        assertThat(response.headers().firstValue("Location"))
+                .hasValueSatisfying(location -> assertThat(location).endsWith("/oauth2/authorization/wsecurity"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/bff/session", "/oauth2/qualquer", "/login/qualquer", "/assets/inexistente-abc.js"})
-    void doesNotServeSpaForServerRoutesOrMissingFiles(String path) throws Exception {
+    @ValueSource(strings = {"/bff/session", "/bff/qualquer"})
+    void bffWithoutSessionAnswers401ProblemDetails(String path) throws Exception {
         HttpResponse<String> response = get(serverPort, path);
 
-        assertThat(response.statusCode()).isEqualTo(404);
-        assertThat(response.body()).doesNotContain("spa-de-teste");
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().firstValue("Content-Type"))
+                .hasValueSatisfying(type -> assertThat(type).startsWith("application/problem+json"));
+        assertThat(response.body())
+                .contains("\"type\":\"https://wsecurity.dev/problems/unauthenticated\"")
+                .contains("\"status\":401");
+    }
+
+    @Test
+    void loginStartRedirectsToTheIdpAuthorizationEndpoint() throws Exception {
+        HttpResponse<String> response = get(serverPort, "/oauth2/authorization/wsecurity");
+
+        assertThat(response.statusCode()).isEqualTo(302);
+        assertThat(response.headers().firstValue("Location"))
+                .hasValueSatisfying(
+                        location -> assertThat(location).startsWith("http://localhost:9000/oauth2/authorize?"));
+    }
+
+    @Test
+    void loginErrorPageAndMissingAssetsNeedNoSession() throws Exception {
+        assertThat(get(serverPort, "/login-error").statusCode()).isEqualTo(200);
+        assertThat(get(serverPort, "/pages/console.css").statusCode()).isEqualTo(200);
+        assertThat(get(serverPort, "/assets/inexistente-abc.js").statusCode()).isEqualTo(404);
     }
 
     @Test

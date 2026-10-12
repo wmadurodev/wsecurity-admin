@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Não foi possível entrar · wsecurity</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link rel="stylesheet" th:href="@{/pages/console.css}">
+</head>
+<body>
+<main class="card">
+  <h1>Não foi possível entrar</h1>
+  <p>O login no wsecurity não foi concluído. Pode ter sido cancelado, ter demorado demais ou o serviço de login pode
+    estar indisponível no momento.</p>
+  <a class="button" th:href="@{/}">Tentar de novo</a>
+</main>
+</body>
+</html>

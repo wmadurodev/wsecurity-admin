@@ -1,0 +1,7 @@
+# Propriedades dos testes: o cliente do console é obrigatório para a aplicação subir. Os testes de login apontam o IdP
+# e a autorização para o WireMock (@DynamicPropertySource).
+wsecurity:
+  admin:
+    client:
+      id: console-de-teste
+      secret: segredo-do-console-de-teste

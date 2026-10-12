@@ -25,8 +25,7 @@
         <palantir-java-format.version>2.102.0</palantir-java-format.version>
         <jacoco.version>0.8.15</jacoco.version>
         <jacoco.line.minimum>0.80</jacoco.line.minimum>
-        <!-- O limite de cobertura (RNF-QUA-01) passa a valer no prompt 03, quando o BFF ganha código. -->
-        <jacoco.haltOnFailure>false</jacoco.haltOnFailure>
+        <jacoco.haltOnFailure>true</jacoco.haltOnFailure>
         <!-- SPA (RNF-TEC-04): Node e npm iguais aos do .tool-versions (RNF-TEC-07). -->
         <frontend-maven-plugin.version>2.0.2</frontend-maven-plugin.version>
         <node.version>v24.21.0</node.version>
@@ -46,6 +45,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- RestClient (RNF-TEC-01): proxy e chamadas às APIs -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
         </dependency>
         <!-- Só para as páginas do BFF fora da SPA (RF-AUT-07) -->
         <dependency>
@@ -67,6 +71,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- traceparent propagado às APIs pelo RestClient (RNF-SEG-10); exportação OTLP só com endpoint configurado -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
         </dependency>
 
         <!-- Desenvolvimento local -->

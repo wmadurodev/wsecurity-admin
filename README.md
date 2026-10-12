@@ -4,8 +4,8 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 02 (ambiente local)**. O BFF sobe e serve uma SPA provisória, também pelo
-> `wsecurity-infra`. Login, proxy e telas entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
+> Estado: **fase 0004, prompt 03 (login e sessão)**. Login OIDC com recuo de escopo, sessão, renovação de tokens e
+> logout funcionam; a SPA ainda é provisória (mostra a sessão). Proxy das APIs e telas entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura
 
@@ -115,3 +115,43 @@ Propriedades `wsecurity.admin.*` e variáveis `WSECURITY_ADMIN_*` (especificaç�
 Fora do perfil `dev` não há padrões para os endereços. No perfil `prod`, a subida
 falha se faltarem `WSECURITY_ADMIN_IDP_ISSUER`, `WSECURITY_ADMIN_PUBLIC_URI`, `WSECURITY_ADMIN_CLIENT_ID` ou
 `WSECURITY_ADMIN_CLIENT_SECRET`.
+
+## Login e sessão
+
+- **Login:** qualquer página sem sessão leva ao login hospedado do IdP pelo registro `wsecurity`
+  (`openid profile email wsecurity.admin`, `authorization_code` + PKCE, cliente confidencial). Se o IdP recusar
+  `wsecurity.admin` (`invalid_scope`, usuário que não é administrador), o BFF refaz a autorização uma vez pelo registro
+  `wsecurity-basic`, sem esse escopo. A sessão do IdP já existe, então a senha não é pedida de novo (DEC-03).
+- **Endereços do IdP (DEC-08):** o navegador vai a `WSECURITY_ADMIN_IDP_ISSUER` (autorização e logout). O BFF usa
+  `WSECURITY_ADMIN_IDP_INTERNAL_URI` (token, JWKS, userinfo e revogação). O `iss` do ID token precisa ser o emissor.
+- **Sessão:** fica em memória no servidor, com os tokens (DEC-06, RN-01). O navegador recebe só o cookie `HttpOnly`
+  `WSADMIN_SESSION` (`__Host-WSADMIN_SESSION` com `Secure` fora de `dev`), com `SameSite=Lax`. A sessão expira após
+  30 min sem uso ou 12 h desde o login. O access token é renovado com o refresh token quando faltam menos de 30 s para
+  expirar. Se a renovação falhar, a sessão termina e a chamada responde `401` (`…/session-expired`).
+- **`GET /bff/session`:** `sub`, `name`, `email`, `platformAdmin` (escopo `wsecurity.admin`), `mfa` (`amr` com `otp`),
+  `expiresAt` e os tenants com alguma permissão `core.*` (`/api/v1/me/**` da autorização). `tenantsAvailable: false`
+  indica que a autorização não respondeu.
+- **Logout:** `POST /bff/logout` com CSRF revoga o refresh token, invalida a sessão e leva ao `/connect/logout` do IdP,
+  que volta à página inicial do console. A SPA chama com `fetch` e recebe `{"redirectUrl": …}` (DEC-14).
+- **Páginas do BFF:** `/login-error` (erro no retorno do login) e `/no-access` (sem administração da plataforma nem
+  tenants administráveis).
+
+## Segurança
+
+| Item | Como |
+|------|------|
+| Tokens | Só na sessão do servidor; nenhuma resposta, cookie legível ou armazenamento do navegador os contém. |
+| CSRF | Modo SPA do Spring Security: cookie `XSRF-TOKEN` legível pela SPA e cabeçalho `X-XSRF-TOKEN` em toda requisição que altera estado. |
+| CSP | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' <IdP>`, sem `unsafe-inline`. O CSS do sonner é importado como arquivo e a injeção de `<style>` é desligada no build. |
+| Outros cabeçalhos | `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy` mínima, `Cross-Origin-Opener-Policy: same-origin`, HSTS fora de `dev` (em HTTPS). |
+| Cache | `no-store` em `/bff/**` e no `index.html`; *assets* com *hash* têm cache de 1 ano (`immutable`). |
+| Cabeçalhos encaminhados | `X-Forwarded-*` só são aceitos em `dev`, para o proxy do Vite. |
+
+## Solução de problemas
+
+| Sintoma | Causa provável e solução |
+|---------|--------------------------|
+| A aplicação não sobe: "Configure o cliente do console" | Faltam `WSECURITY_ADMIN_CLIENT_ID`/`_SECRET`. Carregue `../wsecurity-infra/.local/console-admin.env` (veja "Na IDE"). |
+| O IdP mostra erro de `redirect_uri` | O cliente do console não tem a origem usada (porta do console ou 5174). Rode `make configurar-idp` no `wsecurity-infra`. |
+| Login volta para `/login-error` | O `iss` do ID token não é `WSECURITY_ADMIN_IDP_ISSUER`, ou o IdP recusou o login. Confira o emissor e os logs do console. |
+| `POST` responde `403` | Falta o cabeçalho `X-XSRF-TOKEN` com o valor do cookie `XSRF-TOKEN`. |

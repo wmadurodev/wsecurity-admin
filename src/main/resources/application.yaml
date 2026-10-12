@@ -15,6 +15,17 @@ spring:
 server:
   port: ${WSECURITY_ADMIN_PORT:9200}
   shutdown: graceful
+  servlet:
+    session:
+      # RNF-SEG-01, DEC-09: nome próprio (não colide com os cookies do IdP em localhost), HttpOnly, SameSite=Lax.
+      # Fora de dev, Secure e com o prefixo __Host-. Expiração: SessionLifetime (session.idle-timeout e max-age).
+      tracking-modes: cookie
+      cookie:
+        name: __Host-WSADMIN_SESSION
+        http-only: true
+        secure: true
+        same-site: lax
+        path: /
   error:
     include-message: never
     include-stacktrace: never
@@ -40,6 +51,15 @@ management:
         # RNF-OPE-02: a readiness não depende das APIs (o console sobe e mostra o erro se o IdP estiver fora do ar).
         readiness:
           include: readinessState
+  tracing:
+    sampling:
+      probability: ${WSECURITY_ADMIN_TRACING_SAMPLING:1.0}
+  otlp:
+    metrics:
+      export:
+        # Sem coletor de métricas nesta fase. Traces só são exportados com o endpoint OTLP configurado
+        # (MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT).
+        enabled: false
 
 # Configuração do console (04 §5). Os padrões locais ficam em application-dev.yaml; em prod, application-prod.yaml
 # exige as variáveis.

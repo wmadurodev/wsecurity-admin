@@ -10,6 +10,16 @@ wsecurity:
       uri: ${WSECURITY_ADMIN_AUTHZ_URI:http://localhost:9100}
     public-uri: ${WSECURITY_ADMIN_PUBLIC_URI:http://localhost:9200}
 
+server:
+  servlet:
+    session:
+      cookie:
+        # HTTP local: sem Secure e, por isso, sem o prefixo __Host-.
+        name: WSADMIN_SESSION
+        secure: false
+  # O proxy do Vite (5174) repassa X-Forwarded-*; só em dev o BFF confia neles (RNF-OPE-04).
+  forward-headers-strategy: framework
+
 logging:
   level:
     dev.wmaduro.wsecurity: DEBUG

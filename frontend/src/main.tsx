@@ -1,3 +1,4 @@
+import 'sonner/dist/styles.css'
 import './index.css'
 
 import { StrictMode } from 'react'

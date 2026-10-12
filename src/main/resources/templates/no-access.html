@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sem acesso administrativo · wsecurity</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link rel="stylesheet" th:href="@{/pages/console.css}">
+</head>
+<body>
+<main class="card">
+  <h1>Você não tem acesso administrativo</h1>
+  <p>
+    A conta <strong th:text="${email}">usuario@exemplo.com</strong> não administra a plataforma nem nenhum tenant.
+    Peça acesso ao administrador do seu tenant.
+  </p>
+  <form method="post" th:action="@{/bff/logout}">
+    <button type="submit" class="button">Sair</button>
+  </form>
+</main>
+</body>
+</html>
