@@ -139,6 +139,12 @@ export const routes: RouteObject[] = [
                 children: [
                   { index: true, lazy: page(tenant, (m) => m.TenantRolesPage) },
                   {
+                    path: 'new',
+                    element: <RequirePermission permission="core.roles:write" />,
+                    handle: crumb('Novo papel'),
+                    children: [{ index: true, lazy: page(tenant, (m) => m.NewTenantRolePage) }],
+                  },
+                  {
                     path: ':code',
                     handle: crumb((params) => params.code ?? 'Papel'),
                     lazy: page(tenant, (m) => m.TenantRoleDetailPage),

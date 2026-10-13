@@ -100,6 +100,14 @@ describe('PermissionMatrix', () => {
     expect(screen.getByText('desabilitada')).toBeInTheDocument()
   })
 
+  it('trava a linha cuja concessão atual o chamador não pode retirar', () => {
+    renderWithProviders(<Matrix canGrant={(feature) => feature !== 'core.audit'} />)
+    const auditoria = screen.getByRole('radiogroup', { name: 'Acesso a Auditoria' })
+    expect(within(auditoria).getByRole('radio', { name: 'Leitura' })).toBeChecked()
+    expect(within(auditoria).getByRole('radio', { name: 'Sem acesso' })).toBeDisabled()
+    expect(within(auditoria).getByRole('radio', { name: 'Escrita' })).toBeDisabled()
+  })
+
   it('filtra por texto', async () => {
     renderWithProviders(<Matrix />)
     await userEvent.type(screen.getByLabelText('Filtrar funcionalidades'), 'boleto')

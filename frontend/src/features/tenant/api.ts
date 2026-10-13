@@ -87,3 +87,35 @@ export async function removeMember(slug: string, subject: string): Promise<void>
 export async function listTenantRoles(slug: string): Promise<TenantRole[]> {
   return (await authz.get('/v1/tenants/{tenant}/roles', { path: { tenant: slug } })).data
 }
+
+export type CreateTenantRole = components['schemas']['CreateRole']
+export type UpdateTenantRole = components['schemas']['UpdateRole']
+
+export const tenantRoleKeys = {
+  role: (slug: string, code: string) => ['tenant', slug, 'roles', code] as const,
+}
+
+export async function getTenantRole(
+  slug: string,
+  code: string,
+): Promise<{ role: TenantRole; etag: string | undefined }> {
+  const response = await authz.get('/v1/tenants/{tenant}/roles/{code}', { path: { tenant: slug, code } })
+  return { role: response.data, etag: etagOf(response.data.version, response.etag) }
+}
+
+export async function createTenantRole(slug: string, body: CreateTenantRole): Promise<TenantRole> {
+  return (await authz.post('/v1/tenants/{tenant}/roles', { path: { tenant: slug }, body })).data
+}
+
+export async function updateTenantRole(
+  slug: string,
+  code: string,
+  body: UpdateTenantRole,
+  etag: string | undefined,
+): Promise<void> {
+  await authz.put('/v1/tenants/{tenant}/roles/{code}', { path: { tenant: slug, code }, body, ifMatch: etag })
+}
+
+export async function deleteTenantRole(slug: string, code: string): Promise<void> {
+  await authz.delete('/v1/tenants/{tenant}/roles/{code}', { path: { tenant: slug, code } })
+}

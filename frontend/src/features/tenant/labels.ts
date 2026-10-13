@@ -39,3 +39,9 @@ export const LAST_OWNER_HELP =
 
 /** `sub` abreviado: os 8 primeiros caracteres. */
 export const shortSubject = (subject: string) => (subject.length > 12 ? `${subject.slice(0, 8)}…` : subject)
+
+/** Origem do papel (RF-ROL-02). */
+export const ROLE_ORIGIN: Record<string, string> = { SYSTEM: 'sistema', GLOBAL: 'global', TENANT: 'do tenant' }
+
+/** `403` do anti-escalonamento (0002/RN-07): a API responde com o tipo `privilege-escalation`. */
+export const isPrivilegeEscalation = (type: string | undefined) => Boolean(type?.endsWith('/privilege-escalation'))

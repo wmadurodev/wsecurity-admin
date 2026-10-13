@@ -101,7 +101,8 @@ export function PermissionMatrix({
         <section key={module} aria-labelledby={`${id}-${module}`} className="rounded-lg border">
           <header className="flex items-center justify-between gap-2 border-b bg-muted/50 px-4 py-2">
             <h3 id={`${id}-${module}`} className="font-medium">
-              {group.name} <span className="font-mono text-xs text-muted-foreground">{module}</span>
+              {group.name}{' '}
+              {group.name !== module && <span className="font-mono text-xs text-muted-foreground">{module}</span>}
             </h3>
             <span
               className="text-xs text-muted-foreground"
@@ -120,11 +121,16 @@ export function PermissionMatrix({
                   const anyDenied = LEVELS.some(
                     (level) => level.value !== 'NONE' && !canGrant(feature.code, level.value),
                   )
+                  // Concessão atual que o chamador não possui: ele também não pode retirá-la (0002/RN-07).
+                  const locked = selected !== 'NONE' && !canGrant(feature.code, selected)
                   return (
                     <li key={feature.code} className="flex flex-wrap items-center justify-between gap-2 py-2">
                       <div className="min-w-48">
                         <span className="text-sm">{feature.name}</span>{' '}
-                        <code className="text-xs text-muted-foreground">{feature.code}</code>
+                        {/* Sem o catálogo o nome é o próprio código: não repete. */}
+                        {feature.name !== feature.code && (
+                          <code className="text-xs text-muted-foreground">{feature.code}</code>
+                        )}
                         {!feature.enabled && (
                           <Badge variant="secondary" className="ml-2">
                             desabilitada
@@ -144,9 +150,10 @@ export function PermissionMatrix({
                       >
                         {LEVELS.map((level) => {
                           const denied =
-                            level.value !== 'NONE' &&
-                            level.value !== selected &&
-                            (!canGrant(feature.code, level.value) || !feature.enabled)
+                            (locked && level.value !== selected) ||
+                            (level.value !== 'NONE' &&
+                              level.value !== selected &&
+                              (!canGrant(feature.code, level.value) || !feature.enabled))
                           return (
                             <label
                               key={level.value}

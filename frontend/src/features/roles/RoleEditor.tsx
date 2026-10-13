@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { catalogKeys, listAllFeatures } from '@/features/catalog'
 
 import { ROLE_CODE } from './api'
-import { type Grant, PermissionMatrix } from './components/PermissionMatrix'
+import { type Access, type Grant, type MatrixFeature, PermissionMatrix } from './components/PermissionMatrix'
 import { toMatrix } from './matrix-features'
 
 const schema = z.object({
@@ -23,7 +23,20 @@ const schema = z.object({
 })
 export type RoleValues = z.infer<typeof schema>
 
-/** Formulário de papel global com a matriz de todas as funcionalidades do catálogo (RF-ROL-01, RF-ROL-03). */
+/**
+ * Funcionalidades da matriz vindas de fora (papel do tenant): só as dos módulos contratados, com o anti-escalonamento
+ * em `canGrant` (RF-ROL-03). Sem elas, o editor usa todo o catálogo (papel global).
+ */
+export interface RoleMatrixSource {
+  features: MatrixFeature[] | undefined
+  pending: boolean
+  error: unknown
+  onRetry: () => void
+  canGrant?: (feature: string, access: Access) => boolean
+  deniedHint?: string
+}
+
+/** Formulário de papel com a matriz de permissões (RF-ROL-01, RF-ROL-02, RF-ROL-03). */
 export function RoleEditor({
   initial,
   initialGrants,
@@ -31,6 +44,7 @@ export function RoleEditor({
   submitLabel,
   pending,
   notice,
+  matrix,
   onSubmit,
 }: {
   initial: RoleValues
@@ -39,11 +53,18 @@ export function RoleEditor({
   submitLabel: string
   pending: boolean
   notice?: ReactNode
+  matrix?: RoleMatrixSource
   onSubmit: (values: RoleValues, grants: Grant[]) => void
 }) {
   const form = useForm<RoleValues>({ resolver: zodResolver(schema), defaultValues: initial })
   const [grants, setGrants] = useState<Grant[]>(initialGrants)
-  const features = useQuery({ queryKey: catalogKeys.allFeatures, queryFn: listAllFeatures })
+  const catalog = useQuery({ queryKey: catalogKeys.allFeatures, queryFn: listAllFeatures, enabled: !matrix })
+  const source: RoleMatrixSource = matrix ?? {
+    features: catalog.data && toMatrix(catalog.data),
+    pending: catalog.isPending,
+    error: catalog.error,
+    onRetry: () => void catalog.refetch(),
+  }
 
   return (
     <form className="flex flex-col gap-6" noValidate onSubmit={form.handleSubmit((values) => onSubmit(values, grants))}>
@@ -73,9 +94,17 @@ export function RoleEditor({
         <h2 id="concessoes" className="text-lg font-semibold">
           Concessões
         </h2>
-        {features.isPending && <LoadingState label="Carregando o catálogo…" />}
-        {features.isError && <ErrorState error={features.error} onRetry={() => void features.refetch()} />}
-        {features.data && <PermissionMatrix features={toMatrix(features.data)} grants={grants} onChange={setGrants} />}
+        {source.pending && <LoadingState label="Carregando as funcionalidades…" />}
+        {Boolean(source.error) && <ErrorState error={source.error} onRetry={source.onRetry} />}
+        {source.features && (
+          <PermissionMatrix
+            features={source.features}
+            grants={grants}
+            onChange={setGrants}
+            canGrant={source.canGrant}
+            deniedHint={source.deniedHint}
+          />
+        )}
       </section>
       {notice}
       <div>

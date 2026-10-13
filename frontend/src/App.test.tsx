@@ -74,8 +74,9 @@ describe('SPA: rotas, guardas e layout', () => {
 
   it('administrador da plataforma abre qualquer tenant', async () => {
     withSession(adminSession)
+    server.use(http.get('/bff/api/authz/v1/tenants/qualquer/roles', () => HttpResponse.json([])))
     renderAt('/t/qualquer/roles')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Papéis do tenant' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Papéis' })).toBeInTheDocument()
     expect(screen.getByLabelText('Contexto')).toHaveValue('t:qualquer')
   })
 
