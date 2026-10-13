@@ -1,16 +1,8 @@
 import { ScreenPlaceholder } from '@/components/screen-placeholder'
 
-export function TenantOverviewPage() {
-  return <ScreenPlaceholder title="Visão geral" />
-}
-
-export function MembersPage() {
-  return <ScreenPlaceholder title="Membros" />
-}
-
-export function MemberDetailPage() {
-  return <ScreenPlaceholder title="Membro" />
-}
+export { MemberDetailPage } from './MemberDetailPage'
+export { MembersPage } from './MembersPage'
+export { TenantOverviewPage } from './TenantOverviewPage'
 
 export function TenantRolesPage() {
   return <ScreenPlaceholder title="Papéis do tenant" />

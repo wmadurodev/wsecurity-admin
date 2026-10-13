@@ -24,8 +24,16 @@ describe('SPA: rotas, guardas e layout', () => {
 
   it('dono de um só tenant cai direto nele e não vê a plataforma', async () => {
     withSession(ownerSession)
+    server.use(
+      http.get('/bff/api/authz/v1/tenants/padaria', () =>
+        HttpResponse.json({ slug: 'padaria', name: 'Padaria', status: 'ACTIVE', modules: [] }),
+      ),
+      http.get('/bff/api/authz/v1/tenants/padaria/members', () =>
+        HttpResponse.json({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 }),
+      ),
+    )
     const { router } = renderAt('/')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Visão geral' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Padaria' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/t/padaria')
     expect(screen.queryByRole('option', { name: 'Plataforma' })).not.toBeInTheDocument()
     expect(screen.queryByText('Ative o segundo fator de autenticação')).not.toBeInTheDocument()
