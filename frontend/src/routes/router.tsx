@@ -54,6 +54,7 @@ export const routes: RouteObject[] = [
                 handle: crumb('Clientes OAuth'),
                 children: [
                   { index: true, lazy: page(clients, (m) => m.ClientsPage) },
+                  { path: 'new', handle: crumb('Novo cliente'), lazy: page(clients, (m) => m.NewClientPage) },
                   {
                     path: ':clientId',
                     handle: crumb((params) => params.clientId ?? 'Cliente'),

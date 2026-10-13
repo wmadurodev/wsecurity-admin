@@ -11,10 +11,16 @@ import { cn } from '@/lib/utils'
 export function Dialog({
   open,
   onOpenChange,
+  dismissible = true,
   className,
   children,
   ...props
-}: Omit<React.ComponentProps<'dialog'>, 'open'> & { open: boolean; onOpenChange: (open: boolean) => void }) {
+}: Omit<React.ComponentProps<'dialog'>, 'open'> & {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** Com `false`, o `Esc` não fecha: só uma ação explícita (ex.: segredo exibido uma vez, RN-05). */
+  dismissible?: boolean
+}) {
   const ref = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -33,6 +39,11 @@ export function Dialog({
     <dialog
       ref={ref}
       onClose={() => onOpenChange(false)}
+      onCancel={(event) => {
+        if (!dismissible) {
+          event.preventDefault()
+        }
+      }}
       className={cn(
         'm-auto w-full max-w-lg rounded-lg border bg-background p-6 text-foreground shadow-lg backdrop:bg-black/50',
         className,

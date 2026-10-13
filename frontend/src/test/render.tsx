@@ -18,12 +18,13 @@ export function withSession(session: Session) {
 /** Renderiza a SPA inteira numa rota, com um QueryClient novo por teste. Devolve também o roteador. */
 export function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
+  const queryClient = createQueryClient()
   const view = render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
-  return { ...view, router }
+  return { ...view, router, queryClient }
 }
 
 /** Renderiza um componente com QueryClient e um roteador em memória. */

@@ -4,7 +4,7 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 06 (usuários)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
+> Estado: **fase 0004, prompt 07 (clientes, escopos e chaves)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
 > padrões de tela) funcionam; as telas de cada área entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura

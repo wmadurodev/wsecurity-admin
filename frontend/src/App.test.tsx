@@ -73,12 +73,12 @@ describe('SPA: rotas, guardas e layout', () => {
 
   it('mostra a trilha da rota', async () => {
     withSession(adminSession)
-    renderAt('/platform/clients/dev-spa')
-    await screen.findByRole('heading', { level: 1, name: 'Cliente OAuth' })
+    renderAt('/platform/modules/vendas')
+    await screen.findByRole('heading', { level: 1, name: 'Módulo' })
     const trail = screen.getByRole('navigation', { name: 'Trilha' })
     expect(trail).toHaveTextContent('Plataforma')
-    expect(trail).toHaveTextContent('Clientes OAuth')
-    expect(trail).toHaveTextContent('dev-spa')
+    expect(trail).toHaveTextContent('Módulos')
+    expect(trail).toHaveTextContent('vendas')
   })
 
   it('rota desconhecida mostra 404', async () => {
