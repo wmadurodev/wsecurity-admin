@@ -26,6 +26,7 @@ source ~/.zshrc                       # dentro deste diretório: JAVA_HOME passa
 ./mvnw verify -Dskip.frontend         # ciclo rápido do BFF, sem a SPA
 ./mvnw spotless:apply                 # formata o Java
 java -jar target/wsecurity-admin-*.jar --spring.profiles.active=dev   # http://localhost:9200
+make -C ../wsecurity-infra e2e-admin  # testes de ponta a ponta (Playwright em contêiner, ambiente real)
 
 cd frontend                           # sempre com o Node do asdf
 npm run dev                           # Vite em http://localhost:5174
@@ -47,8 +48,10 @@ src/main/java/dev/wmaduro/wsecurity/admin/
 ├── web/                        # SPA (fallback para index.html), cabeçalhos, páginas de erro
 └── shared/                     # propriedades wsecurity.admin.*, RestClient, observabilidade
 src/main/resources/             # application.yaml (+ -dev, -prod), templates/ (páginas fora da SPA)
+docs/rastreabilidade.md         # requisitos da fase → status → onde → validação
 frontend/
 ├── openapi/                    # contratos copiados de /v3/api-docs
+├── e2e/                        # Playwright: jornadas 1 a 6 (04 §6.1), dados pelas APIs, axe
 └── src/
     ├── routes/                 # rotas do React Router
     ├── features/<área>/        # páginas, componentes, chamadas e esquemas zod de cada área

@@ -4,8 +4,8 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 12 (testes de ponta a ponta)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
-> padrões de tela) funcionam; as telas de cada área entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
+> Estado: **fase 0004 concluída** (prompts 01 a 13). Rastreabilidade em [`docs/rastreabilidade.md`](docs/rastreabilidade.md);
+> prompts em [`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md).
 
 ## Arquitetura
 
@@ -187,6 +187,11 @@ make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
 | O IdP mostra erro de `redirect_uri` | O cliente do console não tem a origem usada (porta do console ou 5174). Rode `make configurar-idp` no `wsecurity-infra`. |
 | Login volta para `/login-error` | O `iss` do ID token não é `WSECURITY_ADMIN_IDP_ISSUER`, ou o IdP recusou o login. Confira o emissor e os logs do console. |
 | `POST` responde `403` | Falta o cabeçalho `X-XSRF-TOKEN` com o valor do cookie `XSRF-TOKEN`. |
+| Login em laço, sessão que some ou `403` de CSRF logo depois de entrar | Cookie de outra aplicação em `localhost`: os cookies não são separados por porta, e um `XSRF-TOKEN` ou uma sessão de outro sistema na mesma máquina confunde o navegador. O console usa `WSADMIN_SESSION` (DEC-09); apague os cookies de `localhost` no navegador ou use uma janela anônima. |
+| `npm run dev` falha com "Port 5174 is already in use" | O Vite usa `strictPort`, porque a porta faz parte das redirect URIs do cliente no IdP. Pare o processo que ocupa a 5174 (`ss -ltnp \| grep 5174`); trocar a porta exige mudar o cliente no IdP (`make configurar-idp`). |
+| A aba "Acessos" do usuário mostra "Consulta de acessos indisponível" (`503`) | Faltam `WSECURITY_ADMIN_SERVICE_CLIENT_ID`/`_SECRET` (cliente de serviço, DEC-07) ou a autorização não respondeu. Carregue `.local/console-admin.env` ou rode `make configurar-idp`. |
+| `/login-error` com `invalid_scope` | O recuo de escopo (DEC-03) só trata `invalid_scope` uma vez por tentativa e só para `wsecurity.admin`. Se ele aparecer de novo, o cliente do console no IdP perdeu um dos escopos `openid profile email` ou o registro `wsecurity-basic` foi alterado: rode `make configurar-idp` e confira os escopos do cliente. |
+| Tela em branco e erro de CSP no console do navegador | Algo tentou script ou estilo inline, ou `eval` (`default-src 'self'`, sem `unsafe-inline` nem `unsafe-eval`). Componentes que injetam `<style>` (Radix) não podem ser usados (DEC-15), e o zod roda com `jitless`. No `npm run dev` o Vite injeta estilos: use o build do Maven para conferir a CSP. |
 
 ## Proxy das APIs
 
