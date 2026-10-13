@@ -74,7 +74,9 @@ describe('SPA: rotas, guardas e layout', () => {
   it('mostra a trilha da rota', async () => {
     withSession(adminSession)
     server.use(
-      http.get('/bff/api/authz/admin/v1/modules/vendas', () => HttpResponse.json({ code: 'vendas', name: 'Vendas', enabled: true })),
+      http.get('/bff/api/authz/admin/v1/modules/vendas', () =>
+        HttpResponse.json({ code: 'vendas', name: 'Vendas', enabled: true }),
+      ),
       http.get('/bff/api/authz/admin/v1/modules/vendas/features', () => HttpResponse.json([])),
     )
     renderAt('/platform/modules/vendas')
