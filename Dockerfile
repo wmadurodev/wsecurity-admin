@@ -12,7 +12,7 @@ COPY frontend/package.json frontend/package-lock.json frontend/.npmrc frontend/
 RUN ./mvnw -B -ntp frontend:install-node-and-npm@install-node-and-npm frontend:npm@npm-ci
 COPY frontend frontend
 COPY src src
-RUN ./mvnw -B -ntp -DskipTests -Dspotless.check.skip=true -Djacoco.skip=true package \
+RUN ./mvnw -B -ntp -DskipTests -Dspotless.check.skip=true -Djacoco.skip=true -Dskip.npm-audit package \
     && java -Djarmode=tools -jar target/wsecurity-admin-*.jar extract --layers --launcher --destination extracted
 
 FROM eclipse-temurin:25-jre

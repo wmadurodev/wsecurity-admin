@@ -1,3 +1,4 @@
+import './lib/zod-config'
 import 'sonner/dist/styles.css'
 import './index.css'
 

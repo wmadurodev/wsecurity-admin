@@ -32,6 +32,8 @@
         <npm.version>11.19.0</npm.version>
         <!-- -Dskip.frontend pula a SPA no ciclo rápido do BFF. -->
         <skip.frontend>false</skip.frontend>
+        <!-- npm audit precisa de rede; segue o skip.frontend por padrão -->
+        <skip.npm-audit>${skip.frontend}</skip.npm-audit>
         <!-- Valor padrão para @{argLine} quando o agente do JaCoCo não é preparado -->
         <argLine/>
     </properties>
@@ -156,6 +158,18 @@
                         </goals>
                         <configuration>
                             <arguments>ci</arguments>
+                        </configuration>
+                    </execution>
+                    <!-- RNF-SEG-09: falha o build com vulnerabilidade alta ou crítica conhecida (-Dskip.npm-audit sem rede). -->
+                    <execution>
+                        <id>npm-audit</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>audit --audit-level=high</arguments>
+                            <skip>${skip.npm-audit}</skip>
                         </configuration>
                     </execution>
                     <execution>

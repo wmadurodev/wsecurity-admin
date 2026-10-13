@@ -3,3 +3,5 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+e2e/report/
+e2e/results/

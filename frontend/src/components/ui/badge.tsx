@@ -11,7 +11,8 @@ export const badgeVariants = cva(
         default: 'border-transparent bg-primary text-primary-foreground',
         secondary: 'border-transparent bg-secondary text-secondary-foreground',
         destructive: 'border-transparent bg-destructive text-white',
-        success: 'border-transparent bg-emerald-600 text-white',
+        // emerald-700: contraste de 5,5:1 com o texto branco (WCAG AA, RNF-UX-02).
+        success: 'border-transparent bg-emerald-700 text-white',
         warning: 'border-transparent bg-amber-500 text-black',
         outline: 'text-foreground',
       },

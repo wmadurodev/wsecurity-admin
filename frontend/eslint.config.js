@@ -7,7 +7,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node', 'node_modules'] },
+  { ignores: ['dist', 'coverage', 'node', 'node_modules', 'e2e/report', 'e2e/results'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -60,6 +60,16 @@ export default tseslint.config(
   {
     files: ['src/components/ui/**/*.{ts,tsx}', 'src/lib/**/*.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
     rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    // Testes de ponta a ponta (Playwright, Node): inspecionam o armazenamento do navegador de propósito (jornada 6).
+    files: ['e2e/**/*.ts'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: {
+      'no-restricted-globals': 'off',
+      'react-hooks/rules-of-hooks': 'off',
       'react-refresh/only-export-components': 'off',
     },
   },

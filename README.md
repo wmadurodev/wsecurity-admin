@@ -4,7 +4,7 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 11 (papéis do tenant e auditoria)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
+> Estado: **fase 0004, prompt 12 (testes de ponta a ponta)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
 > padrões de tela) funcionam; as telas de cada área entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura
@@ -92,6 +92,7 @@ Para desenvolver a SPA com recarga automática: `cd frontend && npm run dev` (Vi
 | React / React Router / TanStack Query | 19.3.0 / 8.4.0 / 5.104.2 |
 | TypeScript / Vite / Vitest | 6.0.3 / 8.3.4 / 5.0.4 |
 | Tailwind CSS / ESLint / Prettier | 4.3.3 / 10.12.0 / 3.9.10 |
+| Playwright (pacote e imagem) / axe-core para Playwright | 1.64.0 / 4.13.0 |
 
 As versões do `package.json` são exatas (sem `^`/`~`, RNF-TEC-03). A lista completa está em `frontend/package.json` e
 no `pom.xml`.
@@ -142,10 +143,41 @@ falha se faltarem `WSECURITY_ADMIN_IDP_ISSUER`, `WSECURITY_ADMIN_PUBLIC_URI`, `W
 |------|------|
 | Tokens | Só na sessão do servidor; nenhuma resposta, cookie legível ou armazenamento do navegador os contém. |
 | CSRF | Modo SPA do Spring Security: cookie `XSRF-TOKEN` legível pela SPA e cabeçalho `X-XSRF-TOKEN` em toda requisição que altera estado. |
-| CSP | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' <IdP>`, sem `unsafe-inline`. O CSS do sonner é importado como arquivo e a injeção de `<style>` é desligada no build. |
+| CSP | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' <IdP>`, sem `unsafe-inline`. O CSS do sonner é importado como arquivo e a injeção de `<style>` é desligada no build. O zod roda sem JIT (`jitless`, em `lib/zod-config.ts`): a sonda de `new Function` geraria uma violação de CSP. |
 | Outros cabeçalhos | `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy` mínima, `Cross-Origin-Opener-Policy: same-origin`, HSTS fora de `dev` (em HTTPS). |
 | Cache | `no-store` em `/bff/**` e no `index.html`; *assets* com *hash* têm cache de 1 ano (`immutable`). |
 | Cabeçalhos encaminhados | `X-Forwarded-*` só são aceitos em `dev`, para o proxy do Vite. |
+| Dependências | `npm audit --audit-level=high` no `./mvnw verify` (falha o build; `-Dskip.npm-audit` sem rede, e a imagem o pula). Java: OWASP Dependency-Check em `./mvnw -Psecurity verify`, que exige `NVD_API_KEY` (como no IdP). |
+
+## Testes de ponta a ponta
+
+Playwright em `frontend/e2e/` (RNF-QUA-03), contra o ambiente real do `wsecurity-infra`, rodando no contêiner
+`mcr.microsoft.com/playwright:v1.64.0-noble` (rede do host), sem navegadores na máquina. Não fazem parte do
+`./mvnw verify`, porque dependem do ambiente:
+
+```bash
+cd ../wsecurity-infra
+make e2e-admin                     # sobe o ambiente se preciso, roda as jornadas e mostra o relatório
+make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
+```
+
+| Arquivo | Jornada (especificação, 04 §6.1) |
+|---------|----------------------------------|
+| `jornada-1-plataforma.spec.ts` | Administrador da plataforma: login sem recuo de escopo, usuário por convite, tenant com o módulo `demo`, papel global, logout |
+| `jornada-2-dono.spec.ts` | Dono: login com recuo de escopo (senha pedida uma vez), membro com `viewer`, papel do tenant pela matriz, troca de papéis, auditoria |
+| `jornada-3-admin-limitado.spec.ts` | Só `core.members:read`: sem ações de escrita; `PATCH` forjado recebe `403` |
+| `jornada-4-sem-acesso.spec.ts` | Usuário sem acesso: página "sem acesso administrativo" |
+| `jornada-5-sessao.spec.ts` | Sessão ociosa expira (o `make e2e-admin` recria o console com 20 s), aviso e volta para a mesma tela |
+| `jornada-6-seguranca.spec.ts` | Nenhum JWT no armazenamento, nos cookies legíveis ou nas respostas `/bff/**`; cookie `HttpOnly`; CSP sem violações; `POST` sem CSRF → `403`; rota de plataforma com usuário comum → `403` |
+
+- **Dados:** cada jornada cria os próprios usuários, tenants e papéis pelas APIs (`support/data.ts`, com o token do
+  `make token-admin`), com nomes únicos. Rodar de novo não exige reset.
+- **Acessibilidade (RNF-UX-02):** `@axe-core/playwright` (WCAG 2.2 AA) nas telas principais (listas, detalhes,
+  formulários, matriz); violações sérias ou críticas falham o teste, e o resultado completo vai anexado ao relatório.
+- **Relatório:** `frontend/e2e/report/index.html` (`npx playwright show-report e2e/report`); rastros e capturas das
+  falhas em `frontend/e2e/results/`.
+- **Outro endereço:** `E2E_BASE_URL`, `E2E_IDP_URL`, `E2E_AUTHZ_URL` e `E2E_ADMIN_TOKEN` (`npm run e2e` dentro do
+  contêiner). Sem `E2E_SESSION_IDLE_SECONDS`, a jornada 5 é pulada.
 
 ## Solução de problemas
 
