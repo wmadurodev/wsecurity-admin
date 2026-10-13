@@ -12,6 +12,7 @@ export function Dialog({
   open,
   onOpenChange,
   dismissible = true,
+  side = false,
   className,
   children,
   ...props
@@ -20,6 +21,8 @@ export function Dialog({
   onOpenChange: (open: boolean) => void
   /** Com `false`, o `Esc` não fecha: só uma ação explícita (ex.: segredo exibido uma vez, RN-05). */
   dismissible?: boolean
+  /** Painel lateral à direita, em vez de diálogo centralizado. */
+  side?: boolean
 }) {
   const ref = useRef<HTMLDialogElement>(null)
 
@@ -46,6 +49,7 @@ export function Dialog({
       }}
       className={cn(
         'm-auto w-full max-w-lg rounded-lg border bg-background p-6 text-foreground shadow-lg backdrop:bg-black/50',
+        side && 'mt-0 mr-0 mb-0 h-dvh max-h-dvh max-w-md overflow-y-auto rounded-none',
         className,
       )}
       {...props}
