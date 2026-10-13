@@ -19,7 +19,7 @@ export interface ListParams {
 }
 
 /** Paginação, ordenação, filtros e busca sincronizados com a URL (RF-NAV-04). */
-export function useListParams(defaults: { sort?: string } = {}): ListParams {
+export function useListParams(defaults: { sort?: string; exclude?: readonly string[] } = {}): ListParams {
   const [params, setParams] = useSearchParams()
   const preferred = Number(readPreference('pageSize'))
   const page = Math.max(0, Number(params.get('page') ?? 0) || 0)
@@ -63,10 +63,11 @@ export function useListParams(defaults: { sort?: string } = {}): ListParams {
       query.sort = sort
     }
     params.forEach((value, name) => {
-      if (!['page', 'size', 'sort'].includes(name) && value) {
+      if (!['page', 'size', 'sort', ...(defaults.exclude ?? [])].includes(name) && value) {
         query[name] = value
       }
     })
     return { page, size, sort, get: (name: string) => params.get(name) ?? undefined, set, query }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `exclude` é constante por tela
   }, [page, size, sort, params, set])
 }
