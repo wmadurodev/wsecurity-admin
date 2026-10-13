@@ -73,8 +73,12 @@ describe('SPA: rotas, guardas e layout', () => {
 
   it('mostra a trilha da rota', async () => {
     withSession(adminSession)
+    server.use(
+      http.get('/bff/api/authz/admin/v1/modules/vendas', () => HttpResponse.json({ code: 'vendas', name: 'Vendas', enabled: true })),
+      http.get('/bff/api/authz/admin/v1/modules/vendas/features', () => HttpResponse.json([])),
+    )
     renderAt('/platform/modules/vendas')
-    await screen.findByRole('heading', { level: 1, name: 'Módulo' })
+    await screen.findByRole('heading', { level: 1, name: 'Vendas' })
     const trail = screen.getByRole('navigation', { name: 'Trilha' })
     expect(trail).toHaveTextContent('Plataforma')
     expect(trail).toHaveTextContent('Módulos')

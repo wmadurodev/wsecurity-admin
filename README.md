@@ -4,7 +4,7 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
-> Estado: **fase 0004, prompt 07 (clientes, escopos e chaves)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
+> Estado: **fase 0004, prompt 08 (catálogo e papéis globais)**. Login, sessão, proxy e o esqueleto da SPA (layout, rotas por contexto,
 > padrões de tela) funcionam; as telas de cada área entram nos próximos prompts ([`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md)).
 
 ## Arquitetura
@@ -202,7 +202,7 @@ Estrutura (`frontend/src`, RNF-ARQ-03):
 | Pasta | Conteúdo |
 |-------|----------|
 | `routes/` | Rotas do React Router: `/platform/**` (exige `wsecurity.admin`) e `/t/:slug/**` (exige o tenant na sessão ou `wsecurity.admin`), páginas 403 e 404 e a página inicial de RF-NAV-03. Cada área é carregada sob demanda. |
-| `features/<área>/` | Telas de cada área (`users`, `clients`, `catalog`, `tenants`, `tenant`, `platform`, `home`). Uma área não importa os arquivos internos de outra. |
+| `features/<área>/` | Telas de cada área (`users`, `clients`, `catalog`, `roles`, `tenants`, `tenant`, `platform`, `home`). Uma área só usa a API pública (`index.ts`) de outra; o ESLint barra importações de arquivos internos. A matriz de permissões (`PermissionMatrix`) é exportada pela área `roles`. |
 | `components/` | Padrões de tela: `DataTable` (paginação no servidor; busca, filtros e ordenação na URL), `FormField` e `applyApiErrors` (erros da API no campo), `ConfirmDialog` (com confirmação forte), `showProblem` (notificação com `title`, `detail` e `traceId`), `ConflictNotice` (`409`/`412`), `PermissionGate`, `DateTime`, `StatusBadge` e `CopyOnceSecret`. O layout fica em `components/layout`. |
 | `components/ui/` | Componentes no estilo shadcn/ui. Diálogo e seleção são nativos (`<dialog>`, `<select>`), porque os do Radix injetam `<style>` e quebrariam a CSP (DEC-15). |
 | `lib/` | Cliente HTTP (`lib/api`: `idp.*` e `authz.*` tipados pelos contratos, CSRF, `If-Match`, `ApiError`), sessão (`useSession`, `can`, `isPlatformAdmin`), preferências de interface e formatação. |

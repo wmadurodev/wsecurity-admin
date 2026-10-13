@@ -41,6 +41,23 @@ export default tseslint.config(
     },
   },
   {
+    // RNF-ARQ-03: uma área só usa a API pública (index.ts) de outra, nunca os arquivos internos.
+    files: ['src/features/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*'],
+              message: 'Importe de @/features/<área> (index.ts), não de arquivos internos.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/components/ui/**/*.{ts,tsx}', 'src/lib/**/*.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',

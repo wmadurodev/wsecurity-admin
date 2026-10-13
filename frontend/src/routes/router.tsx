@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { createBrowserRouter, Outlet, type RouteObject } from 'react-router'
+import { Toaster } from 'sonner'
 
 import { AppLayout, type Crumb } from '@/components/layout/AppLayout'
 import { LoadingState } from '@/components/states'
@@ -16,6 +17,7 @@ function page<M>(load: () => Promise<M>, pick: (module: M) => ComponentType) {
 const users = () => import('@/features/users/pages')
 const clients = () => import('@/features/clients/pages')
 const catalog = () => import('@/features/catalog/pages')
+const roles = () => import('@/features/roles/pages')
 const tenants = () => import('@/features/tenants/pages')
 const tenant = () => import('@/features/tenant/pages')
 const platform = () => import('@/features/platform/PlatformHomePage')
@@ -25,9 +27,12 @@ const crumb = (value: Crumb) => ({ crumb: value })
 export const routes: RouteObject[] = [
   {
     element: (
-      <SessionProvider fallback={<LoadingState label="Carregando a sessão…" />}>
-        <Outlet />
-      </SessionProvider>
+      <>
+        <SessionProvider fallback={<LoadingState label="Carregando a sessão…" />}>
+          <Outlet />
+        </SessionProvider>
+        <Toaster richColors closeButton />
+      </>
     ),
     hydrateFallbackElement: <LoadingState />,
     children: [
@@ -80,11 +85,12 @@ export const routes: RouteObject[] = [
                 path: 'roles',
                 handle: crumb('Papéis globais'),
                 children: [
-                  { index: true, lazy: page(catalog, (m) => m.GlobalRolesPage) },
+                  { index: true, lazy: page(roles, (m) => m.GlobalRolesPage) },
+                  { path: 'new', handle: crumb('Novo papel'), lazy: page(roles, (m) => m.NewGlobalRolePage) },
                   {
                     path: ':code',
                     handle: crumb((params) => params.code ?? 'Papel'),
-                    lazy: page(catalog, (m) => m.GlobalRoleDetailPage),
+                    lazy: page(roles, (m) => m.GlobalRoleDetailPage),
                   },
                 ],
               },
