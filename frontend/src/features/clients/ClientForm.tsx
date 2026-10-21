@@ -171,7 +171,7 @@ export function ClientForm({
           control={form.control}
           name="redirectUris"
           label="URIs de retorno"
-          description="Uma por linha. https; http só em localhost."
+          description="Uma por linha. https; http só em localhost ou no endereço deste console."
           render={(field, props) => <Textarea rows={3} {...field} {...props} />}
         />
       )}

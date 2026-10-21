@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { adminSession } from '@/test/fixtures'
 import { renderAt, withSession } from '@/test/render'
@@ -83,6 +83,29 @@ describe('regras do formulário de cliente', () => {
     expect(isAllowedRedirectUri('http://app.exemplo/cb', 'CONFIDENTIAL')).toBe(false)
     expect(isAllowedRedirectUri('com.exemplo.app:/cb', 'PUBLIC')).toBe(true)
     expect(isAllowedRedirectUri('com.exemplo.app:/cb', 'CONFIDENTIAL')).toBe(false)
+  })
+
+  it('aceita http no endereço pelo qual o console está aberto (acesso pela rede, 0005/RF-REDE-08)', () => {
+    const ip = '192.168.0.10'
+    expect(isAllowedRedirectUri('http://192.168.0.10:5180/callback', 'PUBLIC', ip)).toBe(true)
+    expect(isAllowedRedirectUri('http://192.168.0.10:5180/callback', 'PUBLIC', 'localhost')).toBe(false)
+    expect(isAllowedRedirectUri('http://192.168.0.100/cb', 'PUBLIC', ip)).toBe(false)
+    expect(isAllowedRedirectUri('http://10.0.0.5/cb', 'CONFIDENTIAL', ip)).toBe(false)
+    expect(isAllowedRedirectUri('http://localhost:9200/cb', 'CONFIDENTIAL', ip)).toBe(true)
+    expect(isAllowedRedirectUri('https://192.168.0.10/cb', 'CONFIDENTIAL', ip)).toBe(true)
+    expect(isAllowedRedirectUri('com.exemplo.app:/cb', 'CONFIDENTIAL', ip)).toBe(false)
+  })
+
+  it('o formulário usa o host da página para o http', () => {
+    vi.stubGlobal('location', { ...window.location, hostname: '192.168.0.10' })
+    try {
+      expect(issues({ redirectUris: 'http://192.168.0.10:5180/callback' })).toEqual([])
+      expect(issues({ redirectUris: 'http://10.0.0.5/cb' })[0]).toMatch(
+        /http só em localhost ou no endereço deste console/,
+      )
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('converte durações e preserva os outros settings na edição', () => {

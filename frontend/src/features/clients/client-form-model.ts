@@ -18,8 +18,19 @@ export const AUTH_METHODS = [
 export const ADMIN_SCOPE = 'wsecurity.admin'
 const LOOPBACK = ['localhost', '127.0.0.1', '[::1]']
 
-/** Regra do IdP para URIs de retorno (0001): https; http só em loopback; esquema próprio só para cliente público. */
-export function isAllowedRedirectUri(value: string, type: 'PUBLIC' | 'CONFIDENTIAL'): boolean {
+/** Host pelo qual o console está aberto (vazio fora do navegador). */
+const currentHost = () => globalThis.location?.hostname?.toLowerCase() ?? ''
+
+/**
+ * Regra do IdP para URIs de retorno (0001): https; http só em loopback; esquema próprio só para cliente público.
+ * Fase 0005 (RF-REDE-08): http também no host pelo qual o console está aberto, que no acesso pela rede local é o IP
+ * aceito pelo IdP. Quem decide no fim é o IdP; a recusa dele chega em `violations`.
+ */
+export function isAllowedRedirectUri(
+  value: string,
+  type: 'PUBLIC' | 'CONFIDENTIAL',
+  consoleHost: string = currentHost(),
+): boolean {
   if (value.includes('*') || value.includes('#')) {
     return false
   }
@@ -34,7 +45,8 @@ export function isAllowedRedirectUri(value: string, type: 'PUBLIC' | 'CONFIDENTI
     return url.hostname !== ''
   }
   if (scheme === 'http') {
-    return LOOPBACK.includes(url.hostname.toLowerCase())
+    const host = url.hostname.toLowerCase()
+    return LOOPBACK.includes(host) || (consoleHost !== '' && host === consoleHost.toLowerCase())
   }
   return type === 'PUBLIC' && scheme.includes('.')
 }
@@ -97,7 +109,7 @@ export const clientSchema = z
     if (invalid.length > 0) {
       issue(
         lines(value.redirectUris).some((uri) => invalid.includes(uri)) ? 'redirectUris' : 'postLogoutRedirectUris',
-        `URI inválida: ${invalid.join(', ')}. Use https (http só em localhost)${value.type === 'PUBLIC' ? ' ou um esquema próprio com ponto' : ''}.`,
+        `URI inválida: ${invalid.join(', ')}. Use https (http só em localhost ou no endereço deste console)${value.type === 'PUBLIC' ? ' ou um esquema próprio com ponto' : ''}.`,
       )
     }
     if (value.scopes.length === 0) {

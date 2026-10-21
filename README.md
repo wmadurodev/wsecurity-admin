@@ -83,6 +83,25 @@ variables" → arquivo `.env`, ou um plugin de EnvFile) e use o perfil `dev`.
 
 Para desenvolver a SPA com recarga automática: `cd frontend && npm run dev` (Vite em `http://localhost:5174`).
 
+### Pela rede local (fase 0005)
+
+Para abrir o console num navegador de outra máquina da rede local, no `wsecurity-infra`:
+
+```bash
+make acesso-rede     # detecta o IP; o console passa a responder em http://<IP>:9200
+make acesso-local    # volta para http://localhost:9200
+```
+
+No modo rede, use o IP em todo acesso, inclusive na própria máquina: o `iss` dos tokens e o cookie de sessão ficam
+presos a um host. O BFF não tem nada fixo em `localhost`: a URI de retorno do login e a página pós-logout (perfil
+`dev`) vêm da própria requisição (`{baseUrl}`), e o `iss` esperado e o endereço público vêm de
+`WSECURITY_ADMIN_IDP_ISSUER` e `WSECURITY_ADMIN_PUBLIC_URI`, que o `wsecurity-infra` monta com o IP. Modo Vite
+(`npm run dev`, porta 5174) e BFF na IDE ficam fora do acesso pela rede.
+
+No formulário de clientes, URIs `http` são aceitas em `localhost` e no endereço pelo qual o console está aberto (no
+modo rede, o IP). O IdP confere de novo: ele só aceita `http` em loopback e nos hosts de
+`WSECURITY_CLIENTS_HTTP_REDIRECT_HOSTS`.
+
 ## Versões fixadas
 
 | Componente | Versão |
