@@ -107,6 +107,32 @@ describe('usuários', () => {
     expect(body).toEqual({ email: 'ana@exemplo.local', name: 'Ana Souza', wsecurityAdmin: false })
   })
 
+  it('senha inicial com mostrar/ocultar é enviada como digitada (0006/RF-SEN-06)', async () => {
+    withSession(adminSession)
+    stubDetail()
+    let body: Record<string, unknown> = {}
+    server.use(
+      http.get('/bff/api/idp/users', () => HttpResponse.json(page([]))),
+      http.post('/bff/api/idp/users', async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json(ana, { status: 201 })
+      }),
+    )
+    renderAt('/platform/users')
+    await userEvent.click(await screen.findByRole('button', { name: 'Novo usuário' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('E-mail'), 'ana@exemplo.local')
+    await userEvent.type(within(dialog).getByLabelText('Nome'), 'Ana Souza')
+    await userEvent.click(within(dialog).getByLabelText('Senha inicial'))
+    const password = within(dialog).getByLabelText('Senha inicial', { selector: 'input[type=password]' })
+    await userEvent.type(password, 'frase inicial bem longa 2026')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Mostrar senha' }))
+    expect(password).toHaveAttribute('type', 'text')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Criar usuário' }))
+
+    await waitFor(() => expect(body.password).toBe('frase inicial bem longa 2026'))
+  })
+
   it('ações conforme o status', () => {
     const labels = (user: User) => availableActions(user).map((action) => action.action)
     expect(labels(ana)).toEqual(['disable', 'password-reset', 'mfa-reset', 'delete'])

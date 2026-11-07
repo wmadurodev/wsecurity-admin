@@ -188,6 +188,7 @@ make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
 | `jornada-4-sem-acesso.spec.ts` | Usuário sem acesso: página "sem acesso administrativo" |
 | `jornada-5-sessao.spec.ts` | Sessão ociosa expira (o `make e2e-admin` recria o console com 20 s), aviso e volta para a mesma tela |
 | `jornada-6-seguranca.spec.ts` | Nenhum JWT no armazenamento, nos cookies legíveis ou nas respostas `/bff/**`; cookie `HttpOnly`; CSP sem violações; `POST` sem CSRF → `403`; rota de plataforma com usuário comum → `403` |
+| `jornada-7-senhas.spec.ts` | Fase 0006: olho no login do IdP; cadastro com confirmação e critérios em tempo real; troca recusada por reuso; redefinição pelo e-mail (Mailpit); senha inicial com olho no "Criar usuário" do console (`PasswordInput`) |
 
 - **Dados:** cada jornada cria os próprios usuários, tenants e papéis pelas APIs (`support/data.ts`, com o token do
   `make token-admin`), com nomes únicos. Rodar de novo não exige reset.
@@ -195,8 +196,8 @@ make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
   formulários, matriz); violações sérias ou críticas falham o teste, e o resultado completo vai anexado ao relatório.
 - **Relatório:** `frontend/e2e/report/index.html` (`npx playwright show-report e2e/report`); rastros e capturas das
   falhas em `frontend/e2e/results/`.
-- **Outro endereço:** `E2E_BASE_URL`, `E2E_IDP_URL`, `E2E_AUTHZ_URL` e `E2E_ADMIN_TOKEN` (`npm run e2e` dentro do
-  contêiner). Sem `E2E_SESSION_IDLE_SECONDS`, a jornada 5 é pulada.
+- **Outro endereço:** `E2E_BASE_URL`, `E2E_IDP_URL`, `E2E_AUTHZ_URL`, `E2E_MAILPIT_URL` e `E2E_ADMIN_TOKEN`
+  (`npm run e2e` dentro do contêiner). Sem `E2E_SESSION_IDLE_SECONDS`, a jornada 5 é pulada.
 
 ## Solução de problemas
 

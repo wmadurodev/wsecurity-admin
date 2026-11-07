@@ -11,6 +11,7 @@ import { showSuccess } from '@/components/problem-toast'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { isApiError } from '@/lib/api/errors'
 
 import { createUser, userKeys } from './api'
@@ -109,7 +110,7 @@ export function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpen
             name="password"
             label="Senha inicial"
             description="De 12 a 128 caracteres, sem o nome nem o e-mail. A pessoa troca no primeiro acesso."
-            render={(field, props) => <Input type="password" autoComplete="new-password" {...field} {...props} />}
+            render={(field, props) => <PasswordInput autoComplete="new-password" {...field} {...props} />}
           />
         )}
         <label className="flex items-center gap-2 text-sm">
