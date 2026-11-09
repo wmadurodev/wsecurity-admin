@@ -106,7 +106,7 @@
         "tags": [
           "Usuários"
         ],
-        "summary": "Busca usuários por e-mail, nome e status (paginado)",
+        "summary": "Busca usuários por e-mail, nome, status e id (paginado)",
         "operationId": "search",
         "parameters": [
           {
@@ -137,6 +137,21 @@
                 "DISABLED",
                 "DELETED"
               ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Ids (sub) dos usuários, repetível: ?id=…&id=… (até 100 valores; fase 0008)",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "maxItems": 100,
+              "minItems": 0
             }
           },
           {

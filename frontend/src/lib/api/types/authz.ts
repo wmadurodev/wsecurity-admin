@@ -160,7 +160,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista membros por status, papel e tipo (paginado) */
+        /** Lista membros por status, papel e tipo (paginado), com nome e e-mail do IdP */
         get: operations["list_1"];
         put?: never;
         /** Adiciona um membro por subject ou por e-mail (com convite opcional) */
@@ -370,7 +370,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Consulta um membro */
+        /** Consulta um membro, com nome e e-mail do IdP */
         get: operations["get_3"];
         put?: never;
         post?: never;
@@ -680,6 +680,10 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+            name?: string;
+            email?: string;
+            /** @enum {string} */
+            profileStatus?: "AVAILABLE" | "NOT_FOUND" | "UNAVAILABLE" | "NOT_APPLICABLE";
         };
         DefaultTenantRequest: {
             tenant: string;

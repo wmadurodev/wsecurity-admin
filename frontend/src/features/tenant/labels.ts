@@ -45,3 +45,17 @@ export const ROLE_ORIGIN: Record<string, string> = { SYSTEM: 'sistema', GLOBAL: 
 
 /** `403` do anti-escalonamento (0002/RN-07): a API responde com o tipo `privilege-escalation`. */
 export const isPrivilegeEscalation = (type: string | undefined) => Boolean(type?.endsWith('/privilege-escalation'))
+
+/** Avisos quando o nome e o e-mail do membro não vieram do IdP (fase 0008, RF-PRF-04). */
+export const PROFILE_NOTICE: Record<string, string> = {
+  NOT_FOUND: 'Usuário não encontrado no IdP',
+  UNAVAILABLE: 'Dados do IdP indisponíveis no momento',
+}
+
+/** Nome e e-mail do membro, quando a API de membros os trouxe (`profileStatus = AVAILABLE`). */
+export function memberProfile(member: Pick<Member, 'profileStatus' | 'name' | 'email'>) {
+  if (member.profileStatus !== 'AVAILABLE' || !member.email) {
+    return undefined
+  }
+  return { name: member.name ?? undefined, email: member.email }
+}

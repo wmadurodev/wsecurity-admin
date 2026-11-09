@@ -4,6 +4,11 @@ Console de administração do **wsecurity**. Pelo navegador, o administrador da 
 clientes, escopos e chaves) e a autorização (catálogo, papéis globais, tenants, chaves e auditoria). O dono ou
 administrador de um tenant gerencia os próprios membros, papéis e auditoria.
 
+Na lista e no detalhe de membros, o nome e o e-mail de cada usuário aparecem para qualquer perfil que veja a tela
+(fase 0008). Eles vêm da própria API de membros da autorização, que os busca no IdP, e não de consultas do console ao
+IdP. Quando o IdP não responde, ou quando o usuário não existe mais lá, a tela mostra o `sub` com um aviso. Contas de
+serviço aparecem pelo `client_id`.
+
 > Estado: **fase 0004 concluída** (prompts 01 a 13). Rastreabilidade em [`docs/rastreabilidade.md`](docs/rastreabilidade.md);
 > prompts em [`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md).
 

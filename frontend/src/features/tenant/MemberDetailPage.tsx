@@ -14,7 +14,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useUserIdentities } from '@/features/users'
 import { type ApiError, isApiError } from '@/lib/api/errors'
 import { sessionKey, useSession } from '@/lib/session-context'
 
@@ -27,8 +26,8 @@ import {
   setMemberStatus,
   tenantAreaKeys,
 } from './api'
-import { isExpired, isLastOwner, LAST_OWNER_HELP, subjectTypeLabel, toIso, toLocalInput } from './labels'
-import { CopySubject } from './MemberIdentity'
+import { isExpired, isLastOwner, LAST_OWNER_HELP, memberProfile, subjectTypeLabel, toIso, toLocalInput } from './labels'
+import { CopySubject, ProfileNotice } from './MemberIdentity'
 import { RolePicker } from './RolePicker'
 
 type Confirming = 'suspend' | 'reactivate' | 'remove' | null
@@ -59,7 +58,7 @@ export function MemberDetailPage() {
     queryFn: () => getMember(slug, subject),
   })
   const isUser = query.data?.member.subjectType === 'USER'
-  const identity = useUserIdentities(isUser ? [subject] : [], isPlatformAdmin).get(subject)
+  const identity = query.data ? memberProfile(query.data.member) : undefined
   const [confirming, setConfirming] = useState<Confirming>(null)
   const [lastError, setLastError] = useState<unknown>(null)
 
@@ -111,8 +110,9 @@ export function MemberDetailPage() {
     <>
       <div className="mb-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{identity?.name ?? 'Membro'}</h1>
-          {identity && <span className="text-muted-foreground">{identity.email}</span>}
+          <h1 className="text-2xl font-semibold tracking-tight">{identity?.name ?? identity?.email ?? 'Membro'}</h1>
+          {identity?.name && <span className="text-muted-foreground">{identity.email}</span>}
+          <ProfileNotice member={member} />
           <StatusBadge status={member.status} />
           {isExpired(member) && <StatusBadge status="EXPIRED" />}
         </div>

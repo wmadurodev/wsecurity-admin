@@ -13,15 +13,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { useListParams } from '@/components/use-list-params'
-import { type User, useUserIdentities } from '@/features/users'
-import { useSession } from '@/lib/session-context'
 
 import { AddMemberDialog } from './AddMemberDialog'
 import { listMembers, type Member, tenantAreaKeys } from './api'
-import { isExpired, MEMBER_STATUS_OPTIONS, SUBJECT_TYPE_OPTIONS, subjectTypeLabel } from './labels'
+import { isExpired, MEMBER_STATUS_OPTIONS, memberProfile, SUBJECT_TYPE_OPTIONS, subjectTypeLabel } from './labels'
 import { MemberIdentity } from './MemberIdentity'
 
-function columns(slug: string, identities: Map<string, User>): Column<Member>[] {
+function columns(slug: string): Column<Member>[] {
   return [
     {
       key: 'subject',
@@ -31,11 +29,11 @@ function columns(slug: string, identities: Map<string, User>): Column<Member>[] 
         const subject = member.subject ?? ''
         return (
           <span className="flex items-center gap-2">
-            <MemberIdentity subject={subject} user={identities.get(subject)} />
+            <MemberIdentity member={member} />
             <Link
               to={`/t/${encodeURIComponent(slug)}/members/${encodeURIComponent(subject)}`}
               className="text-sm underline underline-offset-4"
-              aria-label={`Abrir o membro ${identities.get(subject)?.email ?? subject}`}
+              aria-label={`Abrir o membro ${memberProfile(member)?.email ?? subject}`}
             >
               Abrir
             </Link>
@@ -72,19 +70,14 @@ function columns(slug: string, identities: Map<string, User>): Column<Member>[] 
   ]
 }
 
-/** Membros do tenant (RF-MEM-01), com filtros de status, papel e tipo, e a identificação conforme Q-03. */
+/** Membros do tenant (RF-MEM-01), com filtros de status, papel e tipo, e nome e e-mail vindos da API (fase 0008). */
 export function MembersPage() {
   const { slug = '' } = useParams()
-  const { isPlatformAdmin } = useSession()
   const params = useListParams({ sort: 'createdAt,desc' })
   const query = useQuery({
     queryKey: tenantAreaKeys.members(slug, params.query),
     queryFn: () => listMembers(slug, params.query),
   })
-  const users = (query.data?.content ?? [])
-    .filter((member) => member.subjectType === 'USER' && member.subject)
-    .map((member) => member.subject as string)
-  const identities = useUserIdentities(users, isPlatformAdmin)
   const [adding, setAdding] = useState(false)
   const ids = { status: useId(), role: useId(), type: useId() }
   const [role, setRole] = useState(params.get('role') ?? '')
@@ -106,7 +99,7 @@ export function MembersPage() {
       />
       <DataTable
         caption="Membros do tenant"
-        columns={columns(slug, identities)}
+        columns={columns(slug)}
         query={query}
         params={params}
         rowKey={(member) => member.subject ?? ''}

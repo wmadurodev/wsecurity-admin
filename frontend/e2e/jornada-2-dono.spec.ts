@@ -6,8 +6,8 @@ import { signIn } from './support/login'
 
 /**
  * Jornada 2 (04 §6.1): dono de tenant entra como usuário comum (recuo de escopo sem pedir a senha de novo), cai no
- * tenant, adiciona um membro com `viewer`, cria um papel do tenant pela matriz, troca os papéis do membro e vê a
- * auditoria.
+ * tenant, adiciona um membro com `viewer` e vê o nome e o e-mail dele na lista e no detalhe (fase 0008), cria um papel
+ * do tenant pela matriz, troca os papéis do membro e vê a auditoria.
  */
 test('dono de tenant: membro, papel do tenant e auditoria', async ({ page }, testInfo) => {
   const owner = await createUser('dono')
@@ -32,7 +32,11 @@ test('dono de tenant: membro, papel do tenant e auditoria', async ({ page }, tes
   await expectAccessible(page, testInfo, 'adicionar membro')
   await dialog.getByRole('button', { name: 'Adicionar' }).click()
   await expect(page.getByText(`${member.email} adicionado ao tenant.`)).toBeVisible()
-  await expect(page.getByRole('button', { name: `Copiar ${member.id}` })).toBeVisible()
+  // Nome e e-mail do membro vindos da API de membros, para o dono (fase 0008, RF-PRF-04)
+  const members = page.getByRole('table')
+  await expect(members.getByText(member.name, { exact: true })).toBeVisible()
+  await expect(members.getByText(member.email, { exact: true })).toBeVisible()
+  await expect(members.getByRole('link', { name: `Abrir o membro ${member.email}` })).toBeVisible()
   await expectAccessible(page, testInfo, 'lista de membros')
 
   // Papel do tenant pela matriz
@@ -47,6 +51,8 @@ test('dono de tenant: membro, papel do tenant e auditoria', async ({ page }, tes
 
   // Trocar os papéis do membro
   await page.goto(`/t/${tenant.slug}/members/${member.id}`)
+  await expect(page.getByRole('heading', { level: 1, name: member.name })).toBeVisible()
+  await expect(page.getByText(member.email, { exact: true })).toBeVisible()
   await page.getByRole('checkbox', { name: new RegExp(code) }).check()
   await page.getByRole('checkbox', { name: /viewer/ }).uncheck()
   await expectAccessible(page, testInfo, 'detalhe do membro')

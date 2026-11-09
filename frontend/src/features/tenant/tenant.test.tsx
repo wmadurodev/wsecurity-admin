@@ -22,6 +22,7 @@ const member = {
   createdAt: '2026-10-12T10:00:00Z',
   version: 3,
 }
+const withProfile = { ...member, name: 'Bruno Lima', email: 'bruno@exemplo.com', profileStatus: 'AVAILABLE' }
 const roles = [
   { code: 'owner', name: 'Dono', scope: 'SYSTEM', dynamic: false, grants: [] },
   {
@@ -103,17 +104,55 @@ describe('membros', () => {
     expect(screen.getByRole('button', { name: 'Adicionar membro' })).toBeInTheDocument()
   })
 
-  it('para o administrador da plataforma, mostra nome e e-mail do IdP (Q-03)', async () => {
-    withSession(adminSession)
+  it.each([
+    ['dono do tenant', ownerSession],
+    ['administrador da plataforma', adminSession],
+  ])(
+    'para o %s, mostra nome e e-mail vindos da API de membros, sem consultar o IdP (fase 0008)',
+    async (_, session) => {
+      withSession(session)
+      stubTenantArea()
+      let idpCalls = 0
+      server.use(
+        http.get(`${API}/members`, () => HttpResponse.json(page([withProfile]))),
+        http.get('/bff/api/idp/users/:id', () => {
+          idpCalls++
+          return HttpResponse.json({})
+        }),
+      )
+      renderAt('/t/padaria/members')
+      expect(await screen.findByText('bruno@exemplo.com')).toBeInTheDocument()
+      expect(screen.getByText('Bruno Lima')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Abrir o membro bruno@exemplo.com' })).toBeInTheDocument()
+      expect(idpCalls).toBe(0)
+    },
+  )
+
+  it.each([
+    ['NOT_FOUND', 'Usuário não encontrado no IdP'],
+    ['UNAVAILABLE', 'Dados do IdP indisponíveis no momento'],
+  ])('com profileStatus %s, mostra o sub e o aviso', async (profileStatus, notice) => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(http.get(`${API}/members`, () => HttpResponse.json(page([{ ...member, profileStatus }]))))
+    renderAt('/t/padaria/members')
+    expect(await screen.findByText(notice)).toBeInTheDocument()
+    expect(screen.getByText('aaaaaaaa…')).toBeInTheDocument()
+  })
+
+  it('conta de serviço aparece pelo client_id, sem aviso', async () => {
+    withSession(ownerSession)
     stubTenantArea()
     server.use(
-      http.get(`/bff/api/idp/users/${SUB}`, () =>
-        HttpResponse.json({ id: SUB, name: 'Otávio Dono', email: 'otavio@exemplo.com', status: 'ACTIVE' }),
+      http.get(`${API}/members`, () =>
+        HttpResponse.json(
+          page([{ ...member, subject: 'svc-faturas', subjectType: 'CLIENT', profileStatus: 'NOT_APPLICABLE' }]),
+        ),
       ),
     )
     renderAt('/t/padaria/members')
-    expect(await screen.findByText('otavio@exemplo.com')).toBeInTheDocument()
-    expect(screen.getByText('Otávio Dono')).toBeInTheDocument()
+    expect(await screen.findByText('svc-faturas')).toBeInTheDocument()
+    expect(screen.queryByText(/IdP/)).not.toBeInTheDocument()
   })
 
   it('com papel só de leitura, lista sem ações de escrita', async () => {
@@ -247,10 +286,31 @@ describe('detalhe do membro', () => {
   it('o administrador da plataforma vê o link para o usuário', async () => {
     withSession(adminSession)
     stubTenantArea()
-    server.use(
-      http.get(`/bff/api/idp/users/${SUB}`, () => HttpResponse.json({ id: SUB, name: 'Otávio', email: 'o@x.com' })),
-    )
     renderAt(`/t/padaria/members/${SUB}`)
     expect(await screen.findByRole('link', { name: 'Ver usuário' })).toHaveAttribute('href', `/platform/users/${SUB}`)
+  })
+
+  it('o detalhe mostra nome e e-mail vindos da API para o dono (fase 0008)', async () => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(http.get(`${API}/members/${SUB}`, () => HttpResponse.json(withProfile, { headers: { ETag: '"3"' } })))
+    renderAt(`/t/padaria/members/${SUB}`)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bruno Lima' })).toBeInTheDocument()
+    expect(screen.getByText('bruno@exemplo.com')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `Copiar ${SUB}` })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Ver usuário' })).not.toBeInTheDocument()
+  })
+
+  it('o detalhe avisa quando o IdP está indisponível', async () => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(
+      http.get(`${API}/members/${SUB}`, () =>
+        HttpResponse.json({ ...member, profileStatus: 'UNAVAILABLE' }, { headers: { ETag: '"3"' } }),
+      ),
+    )
+    renderAt(`/t/padaria/members/${SUB}`)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Membro' })).toBeInTheDocument()
+    expect(screen.getByText('Dados do IdP indisponíveis no momento')).toBeInTheDocument()
   })
 })

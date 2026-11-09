@@ -718,7 +718,7 @@
         "tags": [
           "Tenant: membros"
         ],
-        "summary": "Lista membros por status, papel e tipo (paginado)",
+        "summary": "Lista membros por status, papel e tipo (paginado), com nome e e-mail do IdP",
         "operationId": "list_1",
         "parameters": [
           {
@@ -1365,7 +1365,7 @@
         "tags": [
           "Tenant: membros"
         ],
-        "summary": "Consulta um membro",
+        "summary": "Consulta um membro, com nome e e-mail do IdP",
         "operationId": "get_3",
         "parameters": [
           {
@@ -2364,6 +2364,21 @@
           "version": {
             "type": "integer",
             "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "profileStatus": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "NOT_FOUND",
+              "UNAVAILABLE",
+              "NOT_APPLICABLE"
+            ]
           }
         }
       },

@@ -29,7 +29,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Busca usuários por e-mail, nome e status (paginado) */
+        /** Busca usuários por e-mail, nome, status e id (paginado) */
         get: operations["search"];
         put?: never;
         /** Cria um usuário (com senha inicial ou convite por e-mail) */
@@ -587,6 +587,8 @@ export interface operations {
                 email?: string;
                 name?: string;
                 status?: "PENDING_VERIFICATION" | "ACTIVE" | "DISABLED" | "DELETED";
+                /** @description Ids (sub) dos usuários, repetível: ?id=…&id=… (até 100 valores; fase 0008) */
+                id?: string[];
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;

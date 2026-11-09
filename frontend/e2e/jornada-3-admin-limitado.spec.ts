@@ -18,11 +18,12 @@ test('administrador limitado: só leitura e PATCH forjado recusado', async ({ pa
   await signIn(page, limited)
   await page.goto(`/t/${tenant.slug}/members`)
   await expect(page.getByRole('table')).toBeVisible()
-  await expect(page.getByRole('button', { name: `Copiar ${owner.id}` })).toBeVisible()
+  // Quem só lê os membros também vê nome e e-mail (fase 0008, RF-PRF-03/04)
+  await expect(page.getByRole('table').getByText(owner.email, { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Adicionar membro' })).toHaveCount(0)
 
   await page.goto(`/t/${tenant.slug}/members/${owner.id}`)
-  await expect(page.getByRole('heading', { level: 1, name: /Membro/ })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: owner.name })).toBeVisible()
   for (const action of ['Suspender', 'Remover do tenant', 'Salvar papéis', 'Definir expiração']) {
     await expect(page.getByRole('button', { name: action })).toHaveCount(0)
   }
