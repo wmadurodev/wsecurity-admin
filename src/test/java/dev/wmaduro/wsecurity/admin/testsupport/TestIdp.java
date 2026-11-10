@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * IdP e autorização simulados no WireMock: JWKS, tokens (código e refresh), userinfo, revogação e as APIs
@@ -76,6 +78,19 @@ public final class TestIdp {
         server.stubFor(post(urlPathEqualTo("/oauth2/token"))
                 .withRequestBody(containing("grant_type=refresh_token"))
                 .willReturn(okJson(tokens.json())));
+    }
+
+    /** Como {@link #stubRefresh}, devolvendo o ID token entregue na renovação. */
+    public String stubRefreshReturningIdToken(Tokens tokens) {
+        String json = tokens.json();
+        server.stubFor(post(urlPathEqualTo("/oauth2/token"))
+                .withRequestBody(containing("grant_type=refresh_token"))
+                .willReturn(okJson(json)));
+        Matcher idToken = Pattern.compile("\"id_token\":\"([^\"]+)\"").matcher(json);
+        if (!idToken.find()) {
+            throw new IllegalStateException("Resposta sem id_token");
+        }
+        return idToken.group(1);
     }
 
     public void stubRefreshRefused() {

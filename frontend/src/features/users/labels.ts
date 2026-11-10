@@ -27,6 +27,7 @@ const EVENTS: Partial<Record<NonNullable<UserEvent['type']>, string>> = {
   USER_DELETED: 'Usuário excluído',
   MFA_ENABLED: 'MFA ativado',
   MFA_DISABLED: 'MFA removido',
+  SESSIONS_TERMINATED: 'Saiu de todos os dispositivos',
 }
 
 export function eventLabel(type: UserEvent['type']): string {

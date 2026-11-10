@@ -194,6 +194,7 @@ make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
 | `jornada-5-sessao.spec.ts` | Sessão ociosa expira (o `make e2e-admin` recria o console com 20 s), aviso e volta para a mesma tela |
 | `jornada-6-seguranca.spec.ts` | Nenhum JWT no armazenamento, nos cookies legíveis ou nas respostas `/bff/**`; cookie `HttpOnly`; CSP sem violações; `POST` sem CSRF → `403`; rota de plataforma com usuário comum → `403` |
 | `jornada-7-senhas.spec.ts` | Fase 0006: olho no login do IdP; cadastro com confirmação e critérios em tempo real; troca recusada por reuso; redefinição pelo e-mail (Mailpit); senha inicial com olho no "Criar usuário" do console (`PasswordInput`) |
+| `jornada-8-manter-conectado.spec.ts` | Fase 0009: com "Manter conectado", "fechar o navegador" (só os cookies persistentes sobrevivem) e reabrir o console não pede a senha; `WSECSESSION` persistente e `WSADMIN_SESSION` de sessão. Sem a opção, a senha é pedida |
 
 - **Dados:** cada jornada cria os próprios usuários, tenants e papéis pelas APIs (`support/data.ts`, com o token do
   `make token-admin`), com nomes únicos. Rodar de novo não exige reset.

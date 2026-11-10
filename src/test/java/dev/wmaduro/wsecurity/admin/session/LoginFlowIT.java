@@ -215,6 +215,29 @@ class LoginFlowIT extends AbstractLoginIT {
         assertThat(Browser.location(browser.get("/"))).endsWith("/oauth2/authorization/wsecurity");
     }
 
+    /**
+     * Depois de renovar o access token, o IdP passa a reconhecer só o ID token novo; o logout precisa mandá-lo no
+     * {@code id_token_hint}, senão o IdP responde 400 ("Não foi possível continuar").
+     */
+    @Test
+    void logoutAfterARefreshSendsTheRefreshedIdToken() {
+        Browser browser = browser();
+        login(browser, "/", Login.asAdmin().expiringIn(10));
+        String refreshedIdToken = idp.stubRefreshReturningIdToken(new TestIdp.Tokens(
+                "access-renovado-" + UUID.randomUUID(),
+                "refresh-novo",
+                "openid profile email wsecurity.admin",
+                300,
+                idp.baseUrl(),
+                null,
+                List.of("pwd")));
+        assertThat(browser.get("/bff/session").statusCode()).isEqualTo(200);
+
+        HttpResponse<String> logout = browser.post("/bff/logout", "X-XSRF-TOKEN", browser.cookie("XSRF-TOKEN"));
+
+        assertThat(Browser.query(Browser.location(logout))).containsEntry("id_token_hint", refreshedIdToken);
+    }
+
     @Test
     void logoutFromTheSpaAnswersWithTheIdpAddress() {
         Browser browser = browser();

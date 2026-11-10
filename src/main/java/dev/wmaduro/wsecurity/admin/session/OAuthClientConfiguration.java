@@ -4,6 +4,7 @@ import dev.wmaduro.wsecurity.admin.shared.AdminProperties;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
@@ -72,15 +73,23 @@ class OAuthClientConfiguration {
         return new HttpSessionOAuth2AuthorizedClientRepository();
     }
 
-    /** Renova o access token com o refresh token quando faltam menos de 30 s para expirar (RF-AUT-04). */
+    /**
+     * Renova o access token com o refresh token quando faltam menos de 30 s para expirar (RF-AUT-04).
+     *
+     * <p>A renovação publica {@code OAuth2AuthorizedClientRefreshedEvent}; o listener que o {@code oauth2Login} registra
+     * troca o {@code OidcUser} da sessão pelo que traz o ID token novo. Sem isso, o logout mandaria ao IdP o ID token
+     * do login no {@code id_token_hint}, que o IdP já substituiu na renovação, e o IdP responderia 400.
+     */
     @Bean
     OAuth2AuthorizedClientManager authorizedClientManager(
-            ClientRegistrationRepository registrations, OAuth2AuthorizedClientRepository authorizedClients) {
+            ClientRegistrationRepository registrations,
+            OAuth2AuthorizedClientRepository authorizedClients,
+            ApplicationEventPublisher events) {
         DefaultOAuth2AuthorizedClientManager manager =
                 new DefaultOAuth2AuthorizedClientManager(registrations, authorizedClients);
         manager.setAuthorizedClientProvider(OAuth2AuthorizedClientProviderBuilder.builder()
                 .authorizationCode()
-                .refreshToken(refresh -> refresh.clockSkew(REFRESH_MARGIN))
+                .refreshToken(refresh -> refresh.clockSkew(REFRESH_MARGIN).eventPublisher(events))
                 .build());
         return manager;
     }

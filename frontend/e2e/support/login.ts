@@ -3,6 +3,11 @@ import { type Page } from '@playwright/test'
 import { NEW_PASSWORD, type Persona } from './data'
 import { env } from './env'
 
+export interface SignInOptions {
+  /** Marca "Manter conectado neste navegador" no formulário de login do IdP (fase 0009). Padrão: desmarcado. */
+  rememberMe?: boolean
+}
+
 export interface SignIn {
   /** Quantas vezes o formulário de login do IdP apareceu. */
   loginForms: number
@@ -14,7 +19,7 @@ export interface SignIn {
  * Entra pelo formulário real do IdP a partir de `path` e volta ao console. Trata a troca obrigatória de senha do
  * primeiro acesso (a persona passa a ter a nova senha) e o consentimento, se o IdP pedir.
  */
-export async function signIn(page: Page, persona: Persona, path = '/'): Promise<SignIn> {
+export async function signIn(page: Page, persona: Persona, path = '/', options: SignInOptions = {}): Promise<SignIn> {
   const result: SignIn = { loginForms: 0, scopeFallback: false }
   page.on('request', (request) => {
     if (request.url().includes('/oauth2/authorization/wsecurity-basic')) {
@@ -38,6 +43,9 @@ export async function signIn(page: Page, persona: Persona, path = '/'): Promise<
       result.loginForms += 1
       await page.fill('#username', persona.email)
       await page.fill('#password', persona.password)
+      if (options.rememberMe) {
+        await page.getByRole('checkbox', { name: 'Manter conectado neste navegador' }).check()
+      }
       await page.locator('button[type=submit]').click()
     } else if (await page.getByRole('button', { name: 'Permitir' }).count()) {
       await page.getByRole('button', { name: 'Permitir' }).click()

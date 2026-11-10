@@ -1381,7 +1381,8 @@
               "CLIENT_SECRET_ROTATED",
               "KEY_ROTATED",
               "MFA_ENABLED",
-              "MFA_DISABLED"
+              "MFA_DISABLED",
+              "SESSIONS_TERMINATED"
             ]
           },
           "outcome": {
