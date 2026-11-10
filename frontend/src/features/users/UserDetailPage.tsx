@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs } from '@/components/ui/tabs'
 import { DateTime } from '@/components/date-time'
 
+import { restoreBlockedReason } from './actions'
 import { getUser, userKeys } from './api'
 import { UserAccessTab } from './UserAccessTab'
 import { UserActions } from './UserActions'
@@ -45,6 +46,18 @@ export function UserDetailPage() {
         <p className="text-xs text-muted-foreground">
           MFA: a API administrativa não informa se o segundo fator está ativo; use "Remover MFA" para zerá-lo (Q-08).
         </p>
+        {user.status === 'DELETED' && (
+          <p className="text-sm">
+            Excluído em <DateTime value={user.deletedAt} />{' '}
+            {user.deletedBy === 'PLATFORM'
+              ? 'pela plataforma'
+              : user.deletedBy === 'USER'
+                ? 'pelo próprio usuário'
+                : '(origem não registrada)'}
+            {user.anonymized ? ' · dados pessoais removidos' : ''}.{' '}
+            {restoreBlockedReason(user) && <span className="text-muted-foreground">{restoreBlockedReason(user)}</span>}
+          </p>
+        )}
         <UserActions user={user} />
       </div>
       <Tabs

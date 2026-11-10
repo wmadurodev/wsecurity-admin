@@ -9,7 +9,6 @@ import { DateTime } from '@/components/date-time'
 import { PermissionGate } from '@/components/permission-gate'
 import { showProblem, showSuccess } from '@/components/problem-toast'
 import { ErrorState, LoadingState } from '@/components/states'
-import { StatusBadge } from '@/components/status-badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -26,8 +25,19 @@ import {
   setMemberStatus,
   tenantAreaKeys,
 } from './api'
-import { isExpired, isLastOwner, LAST_OWNER_HELP, memberProfile, subjectTypeLabel, toIso, toLocalInput } from './labels'
-import { CopySubject, ProfileNotice } from './MemberIdentity'
+import {
+  accountNotice,
+  isAccountInactive,
+  isAccountInactiveError,
+  isLastOwner,
+  LAST_OWNER_HELP,
+  memberProfile,
+  PLATFORM_ACCOUNT_NOTICE,
+  subjectTypeLabel,
+  toIso,
+  toLocalInput,
+} from './labels'
+import { CopySubject, MemberStatus, ProfileNotice } from './MemberIdentity'
 import { RolePicker } from './RolePicker'
 
 type Confirming = 'suspend' | 'reactivate' | 'remove' | null
@@ -62,6 +72,13 @@ export function MemberDetailPage() {
   const [confirming, setConfirming] = useState<Confirming>(null)
   const [lastError, setLastError] = useState<unknown>(null)
 
+  /** `409 member-account-inactive` por corrida (a conta mudou depois da tela abrir): recarrega a situação. */
+  function reloadIfAccountInactive(error: unknown) {
+    if (isApiError(error) && isAccountInactiveError(error.problem.type)) {
+      void refresh()
+    }
+  }
+
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: tenantAreaKeys.member(slug, subject) })
     await queryClient.invalidateQueries({ queryKey: tenantAreaKeys.membersAll(slug) })
@@ -82,6 +99,7 @@ export function MemberDetailPage() {
       setConfirming(null)
       setLastError(error)
       showProblem(error)
+      reloadIfAccountInactive(error)
     },
   })
   const remove = useMutation({
@@ -95,6 +113,7 @@ export function MemberDetailPage() {
       setConfirming(null)
       setLastError(error)
       showProblem(error)
+      reloadIfAccountInactive(error)
     },
   })
 
@@ -106,6 +125,9 @@ export function MemberDetailPage() {
   }
   const { member, etag } = query.data
   const label = identity?.email ?? subject
+  // Fase 0010 (RF-STA-10): conta desativada ou excluída pela plataforma; só a plataforma continua com as ações.
+  const inactive = isAccountInactive(member)
+  const locked = inactive && !isPlatformAdmin
   return (
     <>
       <div className="mb-6 flex flex-col gap-3">
@@ -113,8 +135,7 @@ export function MemberDetailPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{identity?.name ?? identity?.email ?? 'Membro'}</h1>
           {identity?.name && <span className="text-muted-foreground">{identity.email}</span>}
           <ProfileNotice member={member} />
-          <StatusBadge status={member.status} />
-          {isExpired(member) && <StatusBadge status="EXPIRED" />}
+          <MemberStatus member={member} />
         </div>
         <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted-foreground">Subject</dt>
@@ -142,21 +163,32 @@ export function MemberDetailPage() {
               Ver usuário
             </Link>
           )}
-          <PermissionGate tenant={slug} permission="core.members:write">
-            {member.status === 'SUSPENDED' ? (
-              <Button variant="outline" size="sm" onClick={() => setConfirming('reactivate')}>
-                Reativar
+          {!locked && (
+            <PermissionGate tenant={slug} permission="core.members:write">
+              {member.status === 'SUSPENDED' ? (
+                <Button variant="outline" size="sm" onClick={() => setConfirming('reactivate')}>
+                  Reativar
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setConfirming('suspend')}>
+                  Suspender
+                </Button>
+              )}
+              <Button variant="destructive" size="sm" onClick={() => setConfirming('remove')}>
+                Remover do tenant
               </Button>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => setConfirming('suspend')}>
-                Suspender
-              </Button>
-            )}
-            <Button variant="destructive" size="sm" onClick={() => setConfirming('remove')}>
-              Remover do tenant
-            </Button>
-          </PermissionGate>
+            </PermissionGate>
+          )}
         </div>
+        {inactive && (
+          <Alert variant="warning">
+            <AlertTitle>Conta sem acesso</AlertTitle>
+            <AlertDescription>
+              <p>{accountNotice(member)}</p>
+              {isPlatformAdmin && <p>{PLATFORM_ACCOUNT_NOTICE}</p>}
+            </AlertDescription>
+          </Alert>
+        )}
         <LastOwnerAlert error={lastError} />
       </div>
       <div className="flex flex-col gap-10">
@@ -164,41 +196,49 @@ export function MemberDetailPage() {
           <h2 id="papeis-membro" className="text-lg font-semibold">
             Papéis
           </h2>
-          <PermissionGate
-            tenant={slug}
-            permission="core.members:write"
-            fallback={<RoleBadges roles={member.roles ?? []} />}
-          >
-            <RolesForm
-              key={etag}
-              slug={slug}
-              member={member}
-              etag={etag}
-              onSaved={refresh}
-              onReload={() => void query.refetch()}
-            />
-          </PermissionGate>
+          {locked ? (
+            <RoleBadges roles={member.roles ?? []} />
+          ) : (
+            <PermissionGate
+              tenant={slug}
+              permission="core.members:write"
+              fallback={<RoleBadges roles={member.roles ?? []} />}
+            >
+              <RolesForm
+                key={etag}
+                slug={slug}
+                member={member}
+                etag={etag}
+                onSaved={refresh}
+                onReload={() => void query.refetch()}
+              />
+            </PermissionGate>
+          )}
         </section>
         <section aria-labelledby="expiracao-membro" className="flex flex-col gap-3">
           <h2 id="expiracao-membro" className="text-lg font-semibold">
             Expiração
           </h2>
-          <PermissionGate
-            tenant={slug}
-            permission="core.members:write"
-            fallback={
-              <p className="text-sm">{member.expiresAt ? <DateTime value={member.expiresAt} /> : 'Sem expiração.'}</p>
-            }
-          >
-            <ExpirationForm
-              key={etag}
-              slug={slug}
-              member={member}
-              etag={etag}
-              onSaved={refresh}
-              onReload={() => void query.refetch()}
-            />
-          </PermissionGate>
+          {locked ? (
+            <p className="text-sm">{member.expiresAt ? <DateTime value={member.expiresAt} /> : 'Sem expiração.'}</p>
+          ) : (
+            <PermissionGate
+              tenant={slug}
+              permission="core.members:write"
+              fallback={
+                <p className="text-sm">{member.expiresAt ? <DateTime value={member.expiresAt} /> : 'Sem expiração.'}</p>
+              }
+            >
+              <ExpirationForm
+                key={etag}
+                slug={slug}
+                member={member}
+                etag={etag}
+                onSaved={refresh}
+                onReload={() => void query.refetch()}
+              />
+            </PermissionGate>
+          )}
         </section>
       </div>
       <ConfirmDialog
@@ -267,6 +307,9 @@ function RolesForm({ slug, member, etag, onSaved, onReload }: MemberFormProps) {
       if (!(isApiError(error) && (error.status === 412 || isLastOwner(error.problem.type)))) {
         showProblem(error)
       }
+      if (isApiError(error) && isAccountInactiveError(error.problem.type)) {
+        onReload()
+      }
     },
   })
   const error = save.error
@@ -317,6 +360,9 @@ function ExpirationForm({ slug, member, etag, onSaved, onReload }: MemberFormPro
     onError: (error) => {
       if (!(isApiError(error) && error.status === 412)) {
         showProblem(error)
+      }
+      if (isApiError(error) && isAccountInactiveError(error.problem.type)) {
+        onReload()
       }
     },
   })

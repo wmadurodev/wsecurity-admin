@@ -7,7 +7,6 @@ import { type Column, DataTable } from '@/components/data-table'
 import { DateTime } from '@/components/date-time'
 import { PageHeader } from '@/components/page-header'
 import { PermissionGate } from '@/components/permission-gate'
-import { StatusBadge } from '@/components/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,8 +15,8 @@ import { useListParams } from '@/components/use-list-params'
 
 import { AddMemberDialog } from './AddMemberDialog'
 import { listMembers, type Member, tenantAreaKeys } from './api'
-import { isExpired, MEMBER_STATUS_OPTIONS, memberProfile, SUBJECT_TYPE_OPTIONS, subjectTypeLabel } from './labels'
-import { MemberIdentity } from './MemberIdentity'
+import { MEMBER_STATUS_OPTIONS, memberProfile, SUBJECT_TYPE_OPTIONS, subjectTypeLabel } from './labels'
+import { MemberIdentity, MemberStatus } from './MemberIdentity'
 
 function columns(slug: string): Column<Member>[] {
   return [
@@ -59,12 +58,7 @@ function columns(slug: string): Column<Member>[] {
       key: 'status',
       header: 'Status',
       sortBy: 'status',
-      cell: (member) => (
-        <span className="flex flex-wrap gap-1">
-          <StatusBadge status={member.status} />
-          {isExpired(member) && <StatusBadge status="EXPIRED" />}
-        </span>
-      ),
+      cell: (member) => <MemberStatus member={member} />,
     },
     { key: 'expiresAt', header: 'Expiração', cell: (member) => <DateTime value={member.expiresAt} /> },
   ]

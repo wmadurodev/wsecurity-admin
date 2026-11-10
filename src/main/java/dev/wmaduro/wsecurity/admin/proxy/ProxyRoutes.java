@@ -64,7 +64,7 @@ final class ProxyRoutes {
         // IdP: todas exigem wsecurity.admin.
         routes.idp("GET, POST", "/users");
         routes.idp("GET, PATCH, DELETE", "/users/{id}");
-        routes.idp("POST", "/users/{id}/disable", "/users/{id}/enable", "/users/{id}/unlock");
+        routes.idp("POST", "/users/{id}/disable", "/users/{id}/enable", "/users/{id}/unlock", "/users/{id}/restore");
         routes.idp("POST", "/users/{id}/password-reset", "/users/{id}/mfa/reset");
         routes.idp("GET", "/users/{id}/events");
         routes.idp("GET, POST", "/clients");

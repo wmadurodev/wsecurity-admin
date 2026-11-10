@@ -9,6 +9,14 @@ Na lista e no detalhe de membros, o nome e o e-mail de cada usuário aparecem pa
 IdP. Quando o IdP não responde, ou quando o usuário não existe mais lá, a tela mostra o `sub` com um aviso. Contas de
 serviço aparecem pelo `client_id`.
 
+Desde a fase 0010, quando a plataforma desativa ou exclui um usuário, a lista e o detalhe de membros mostram
+"Desativado pela plataforma", "Excluído pela plataforma" ou "Conta excluída pelo usuário" no lugar do status do
+vínculo. O nome e o e-mail continuam visíveis até a anonimização; depois dela, aparece "Dados pessoais removidos após
+a exclusão". O dono e o administrador do tenant não têm ações sobre esse membro e veem um aviso. O administrador da
+plataforma vê o mesmo aviso e continua com as ações. Na área de usuários da plataforma, um usuário excluído mostra
+quando e por quem foi excluído. Se a exclusão foi feita pela plataforma e os dados ainda existem, aparece a ação
+"Restaurar", que devolve a conta ao status anterior.
+
 > Estado: **fase 0004 concluída** (prompts 01 a 13). Rastreabilidade em [`docs/rastreabilidade.md`](docs/rastreabilidade.md);
 > prompts em [`wsecurity-docs/prompts/0004-admin-console`](../../wsecurity-docs/prompts/0004-admin-console/README.md).
 
@@ -195,6 +203,7 @@ make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
 | `jornada-6-seguranca.spec.ts` | Nenhum JWT no armazenamento, nos cookies legíveis ou nas respostas `/bff/**`; cookie `HttpOnly`; CSP sem violações; `POST` sem CSRF → `403`; rota de plataforma com usuário comum → `403` |
 | `jornada-7-senhas.spec.ts` | Fase 0006: olho no login do IdP; cadastro com confirmação e critérios em tempo real; troca recusada por reuso; redefinição pelo e-mail (Mailpit); senha inicial com olho no "Criar usuário" do console (`PasswordInput`) |
 | `jornada-8-manter-conectado.spec.ts` | Fase 0009: com "Manter conectado", "fechar o navegador" (só os cookies persistentes sobrevivem) e reabrir o console não pede a senha; `WSECSESSION` persistente e `WSADMIN_SESSION` de sessão. Sem a opção, a senha é pedida |
+| `jornada-9-status-da-conta.spec.ts` | Fase 0010: a plataforma desativa um membro → o dono vê "Desativado pela plataforma" sem ações e o membro perde o acesso ao tenant; exclusão com nome e e-mail visíveis; restauração ao status anterior; reativação devolve as ações; axe |
 
 - **Dados:** cada jornada cria os próprios usuários, tenants e papéis pelas APIs (`support/data.ts`, com o token do
   `make token-admin`), com nomes únicos. Rodar de novo não exige reset.

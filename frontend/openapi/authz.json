@@ -60,12 +60,12 @@
       "description": "Papéis reutilizáveis por todos os tenants"
     },
     {
-      "name": "Titulares",
-      "description": "Apagamento de dados de um titular (LGPD)"
-    },
-    {
       "name": "Metadados",
       "description": "Descoberta e chaves públicas dos tokens de tenant"
+    },
+    {
+      "name": "Titulares",
+      "description": "Apagamento de dados de um titular (LGPD) e situação da conta no IdP"
     }
   ],
   "paths": {
@@ -365,6 +365,42 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/admin/v1/subjects/{subject}/account-status": {
+      "put": {
+        "tags": [
+          "Titulares"
+        ],
+        "summary": "Registra a situação da conta do titular no IdP (aviso do IdP, fase 0010)",
+        "description": "DISABLED e DELETED tiram o acesso do titular em todos os tenants (MEMBERSHIP_INACTIVE) e bloqueiam as ações do administrador local sobre o vínculo.",
+        "operationId": "accountStatus",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1787,6 +1823,7 @@
                 "TENANT_TOKEN_DENIED",
                 "KEY_ROTATED",
                 "SUBJECT_ERASED",
+                "SUBJECT_ACCOUNT_STATUS_CHANGED",
                 "USER_INVITED"
               ]
             }
@@ -2078,6 +2115,7 @@
                 "TENANT_TOKEN_DENIED",
                 "KEY_ROTATED",
                 "SUBJECT_ERASED",
+                "SUBJECT_ACCOUNT_STATUS_CHANGED",
                 "USER_INVITED"
               ]
             }
@@ -2379,6 +2417,22 @@
               "UNAVAILABLE",
               "NOT_APPLICABLE"
             ]
+          },
+          "accountStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PENDING_VERIFICATION",
+              "DISABLED",
+              "DELETED"
+            ]
+          },
+          "accountDeletedBy": {
+            "type": "string",
+            "enum": [
+              "PLATFORM",
+              "USER"
+            ]
           }
         }
       },
@@ -2473,6 +2527,35 @@
             "format": "int64"
           }
         }
+      },
+      "AccountStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PENDING_VERIFICATION",
+              "DISABLED",
+              "DELETED"
+            ]
+          },
+          "deletedBy": {
+            "type": "string",
+            "enum": [
+              "PLATFORM",
+              "USER"
+            ]
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "changedAt",
+          "status"
+        ]
       },
       "SyncFeature": {
         "type": "object",
@@ -3157,6 +3240,7 @@
               "TENANT_TOKEN_DENIED",
               "KEY_ROTATED",
               "SUBJECT_ERASED",
+              "SUBJECT_ACCOUNT_STATUS_CHANGED",
               "USER_INVITED"
             ]
           },

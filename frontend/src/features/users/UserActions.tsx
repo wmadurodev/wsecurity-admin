@@ -36,7 +36,7 @@ export function UserActions({ user }: { user: User }) {
       {availableActions(user).map((spec) => (
         <Button
           key={spec.action}
-          variant={spec.action === 'delete' ? 'destructive' : 'outline'}
+          variant={spec.action === 'delete' ? 'destructive' : spec.action === 'restore' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setPending(spec)}
         >

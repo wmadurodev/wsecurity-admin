@@ -57,6 +57,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/v1/users/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restaura um usuário excluído pela plataforma, antes da anonimização (fase 0010)
+         * @description A conta volta ao status anterior à exclusão. 409 user-not-deleted, user-deleted-by-holder (exclusão pedida pelo usuário ou de origem desconhecida) ou user-anonymized.
+         */
+        post: operations["restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/v1/users/{id}/password-reset": {
         parameters: {
             query?: never;
@@ -410,6 +430,12 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+            /** Format: date-time */
+            deletedAt?: string;
+            /** @enum {string} */
+            deletedBy?: "PLATFORM" | "USER";
+            anonymized?: boolean;
+            restorable?: boolean;
         };
         CreateScope: {
             name: string;
@@ -481,7 +507,7 @@ export interface components {
             /** Format: date-time */
             occurredAt?: string;
             /** @enum {string} */
-            type?: "LOGIN_SUCCESS" | "LOGIN_FAILURE" | "ACCOUNT_LOCKED" | "ACCOUNT_UNLOCKED" | "LOGOUT" | "TOKEN_ISSUED" | "TOKEN_REFRESHED" | "TOKEN_REVOKED" | "REFRESH_TOKEN_REUSE_DETECTED" | "PASSWORD_CHANGED" | "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET_COMPLETED" | "EMAIL_VERIFIED" | "USER_CREATED" | "USER_UPDATED" | "USER_DISABLED" | "USER_DELETED" | "CLIENT_CREATED" | "CLIENT_UPDATED" | "CLIENT_SECRET_ROTATED" | "KEY_ROTATED" | "MFA_ENABLED" | "MFA_DISABLED" | "SESSIONS_TERMINATED";
+            type?: "LOGIN_SUCCESS" | "LOGIN_FAILURE" | "ACCOUNT_LOCKED" | "ACCOUNT_UNLOCKED" | "LOGOUT" | "TOKEN_ISSUED" | "TOKEN_REFRESHED" | "TOKEN_REVOKED" | "REFRESH_TOKEN_REUSE_DETECTED" | "PASSWORD_CHANGED" | "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET_COMPLETED" | "EMAIL_VERIFIED" | "USER_CREATED" | "USER_UPDATED" | "USER_DISABLED" | "USER_DELETED" | "USER_RESTORED" | "CLIENT_CREATED" | "CLIENT_UPDATED" | "CLIENT_SECRET_ROTATED" | "KEY_ROTATED" | "MFA_ENABLED" | "MFA_DISABLED" | "SESSIONS_TERMINATED";
             /** @enum {string} */
             outcome?: "SUCCESS" | "FAILURE";
             clientId?: string;
@@ -633,6 +659,28 @@ export interface operations {
         };
     };
     unlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    restore: {
         parameters: {
             query?: never;
             header?: never;

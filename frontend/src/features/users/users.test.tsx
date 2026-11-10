@@ -7,7 +7,7 @@ import { adminSession } from '@/test/fixtures'
 import { renderAt, withSession } from '@/test/render'
 import { server } from '@/test/server'
 
-import { availableActions } from './actions'
+import { availableActions, restoreBlockedReason } from './actions'
 import type { User } from './api'
 
 const ana: User = {
@@ -175,10 +175,59 @@ describe('usuários', () => {
     renderAt(`/platform/users/${ana.id}`)
     await userEvent.click(await screen.findByRole('button', { name: 'Excluir' }))
     const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByText(/Q-05/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/pode ser desfeita aqui/)).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Excluir' })).toBeDisabled()
     await userEvent.type(within(dialog).getByLabelText(/Digite/), 'ana@exemplo.local')
     expect(within(dialog).getByRole('button', { name: 'Excluir' })).toBeEnabled()
+  })
+
+  it('restaurar só aparece para exclusão da plataforma ainda não anonimizada (fase 0010)', () => {
+    const labels = (user: User) => availableActions(user).map((action) => action.action)
+    const deleted = { ...ana, status: 'DELETED' as const, deletedBy: 'PLATFORM' as const }
+    expect(labels({ ...deleted, restorable: true })).toEqual(['restore'])
+    expect(labels({ ...deleted, deletedBy: 'USER', restorable: false })).toEqual([])
+    expect(restoreBlockedReason({ ...deleted, deletedBy: 'USER', restorable: false })).toMatch(/próprio usuário/)
+    expect(restoreBlockedReason({ ...deleted, anonymized: true, restorable: false })).toMatch(/já foram removidos/)
+    expect(restoreBlockedReason({ ...deleted, deletedBy: undefined, restorable: false })).toMatch(/origem/)
+    expect(restoreBlockedReason({ ...deleted, restorable: true })).toBeUndefined()
+  })
+
+  it('restaura pelo diálogo de confirmação e mostra os dados da exclusão', async () => {
+    withSession(adminSession)
+    const deleted: User = {
+      ...ana,
+      status: 'DELETED',
+      deletedAt: '2026-11-10T12:00:00Z',
+      deletedBy: 'PLATFORM',
+      anonymized: false,
+      restorable: true,
+    }
+    let restored = false
+    server.use(
+      http.get(`/bff/api/idp/users/${ana.id}`, () =>
+        HttpResponse.json(restored ? { ...ana, status: 'DISABLED' } : deleted, { headers: { ETag: '"3"' } }),
+      ),
+      http.post(`/bff/api/idp/users/${ana.id}/restore`, () => {
+        restored = true
+        return HttpResponse.json({ ...ana, status: 'DISABLED' })
+      }),
+    )
+    renderAt(`/platform/users/${ana.id}`)
+    expect(await screen.findByText(/pela plataforma/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Restaurar' }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/status que tinha antes da exclusão/)).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Restaurar' }))
+    await waitFor(() => expect(restored).toBe(true))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Restaurar' })).not.toBeInTheDocument())
+  })
+
+  it('exclusão pedida pelo usuário não oferece restaurar e explica o motivo', async () => {
+    withSession(adminSession)
+    stubDetail({ ...ana, status: 'DELETED', deletedBy: 'USER', anonymized: false, restorable: false })
+    renderAt(`/platform/users/${ana.id}`)
+    expect(await screen.findByText(/Exclusão pedida pelo próprio usuário: não pode ser desfeita/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Restaurar' })).not.toBeInTheDocument()
   })
 
   it('edição envia If-Match e mostra o aviso de 412', async () => {

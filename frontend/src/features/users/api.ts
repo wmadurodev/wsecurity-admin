@@ -41,7 +41,7 @@ export async function updateUser(id: string, body: UpdateUser, etag: string | un
   return (await idp.patch('/users/{id}', { path: { id }, body, ifMatch: etag })).data
 }
 
-export type UserAction = 'disable' | 'enable' | 'unlock' | 'password-reset' | 'mfa-reset' | 'delete'
+export type UserAction = 'disable' | 'enable' | 'unlock' | 'password-reset' | 'mfa-reset' | 'delete' | 'restore'
 
 export async function runUserAction(id: string, action: UserAction): Promise<void> {
   const path = { id }
@@ -63,6 +63,9 @@ export async function runUserAction(id: string, action: UserAction): Promise<voi
       return
     case 'delete':
       await idp.delete('/users/{id}', { path })
+      return
+    case 'restore':
+      await idp.post('/users/{id}/restore', { path })
   }
 }
 

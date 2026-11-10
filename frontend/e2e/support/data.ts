@@ -114,3 +114,13 @@ export async function createTenantRole(
 export async function addMember(slug: string, member: Persona, roles: string[]): Promise<void> {
   await call(env.authz, 'POST', `/api/v1/tenants/${slug}/members`, { email: member.email, roles, invite: false })
 }
+
+/** Ação administrativa sobre um usuário do IdP (fase 0010): desativar, reativar ou restaurar. */
+export async function userAction(id: string, action: 'disable' | 'enable' | 'restore'): Promise<void> {
+  await call(env.idp, 'POST', `/api/admin/v1/users/${id}/${action}`)
+}
+
+/** Exclusão do usuário pela plataforma (fase 0010: restaurável até a anonimização). */
+export async function deleteUser(id: string): Promise<void> {
+  await call(env.idp, 'DELETE', `/api/admin/v1/users/${id}`, undefined, [204])
+}

@@ -238,6 +238,39 @@
         }
       }
     },
+    "/api/admin/v1/users/{id}/restore": {
+      "post": {
+        "tags": [
+          "Usuários"
+        ],
+        "summary": "Restaura um usuário excluído pela plataforma, antes da anonimização (fase 0010)",
+        "description": "A conta volta ao status anterior à exclusão. 409 user-not-deleted, user-deleted-by-holder (exclusão pedida pelo usuário ou de origem desconhecida) ou user-anonymized.",
+        "operationId": "restore",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/v1/users/{id}/password-reset": {
       "post": {
         "tags": [
@@ -1146,6 +1179,23 @@
           "version": {
             "type": "integer",
             "format": "int64"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedBy": {
+            "type": "string",
+            "enum": [
+              "PLATFORM",
+              "USER"
+            ]
+          },
+          "anonymized": {
+            "type": "boolean"
+          },
+          "restorable": {
+            "type": "boolean"
           }
         }
       },
@@ -1376,6 +1426,7 @@
               "USER_UPDATED",
               "USER_DISABLED",
               "USER_DELETED",
+              "USER_RESTORED",
               "CLIENT_CREATED",
               "CLIENT_UPDATED",
               "CLIENT_SECRET_ROTATED",

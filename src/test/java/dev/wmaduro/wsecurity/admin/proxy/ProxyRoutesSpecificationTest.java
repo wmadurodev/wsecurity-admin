@@ -16,13 +16,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 
 /**
- * A lista de rotas do proxy é exatamente a tabela 04 §3.2 da especificação (RF-BFF-02). Lê o Markdown do
+ * A lista de rotas do proxy é exatamente a tabela 04 §3.2 da especificação (RF-BFF-02), mais os acréscimos de fases
+ * posteriores (seções "(acréscimo a 0004 §3.2)" nos {@code 04-contratos.md} das fases, ex.: 0010). Lê o Markdown do
  * {@code wsecurity-docs} no workspace; fora do workspace (clone isolado do módulo), o teste é ignorado.
  */
 class ProxyRoutesSpecificationTest {
 
-    private static final Path SPEC =
-            Path.of("../../wsecurity-docs/specification/0004-admin-console/04-arquitetura-e-telas.md");
+    private static final Path SPECIFICATIONS = Path.of("../../wsecurity-docs/specification");
+    private static final Path SPEC = SPECIFICATIONS.resolve("0004-admin-console/04-arquitetura-e-telas.md");
+    private static final String ADDITION = "(acréscimo a 0004 §3.2)";
     private static final Pattern CODE = Pattern.compile("`([^`]+)`");
     private static final Pattern ALTERNATIVES = Pattern.compile("\\{([^{}]*,[^{}]*)}");
 
@@ -30,7 +32,23 @@ class ProxyRoutesSpecificationTest {
     void routesMatchTheSpecificationTable() throws IOException {
         assumeTrue(Files.exists(SPEC), "especificação fora do workspace");
 
-        assertThat(fromCode()).containsExactlyElementsOf(fromSpecification(Files.readAllLines(SPEC)));
+        Set<String> expected = fromSpecification(Files.readAllLines(SPEC));
+        expected.addAll(additions());
+        assertThat(fromCode()).containsExactlyElementsOf(expected);
+    }
+
+    /** Rotas acrescentadas por fases posteriores, nas seções marcadas com {@value #ADDITION}. */
+    private static Set<String> additions() throws IOException {
+        Set<String> routes = new TreeSet<>();
+        try (var phases = Files.list(SPECIFICATIONS)) {
+            for (Path phase : phases.sorted().toList()) {
+                Path contracts = phase.resolve("04-contratos.md");
+                if (Files.exists(contracts)) {
+                    routes.addAll(fromSpecification(Files.readAllLines(contracts), ADDITION));
+                }
+            }
+        }
+        return routes;
     }
 
     @Test
@@ -55,11 +73,20 @@ class ProxyRoutesSpecificationTest {
     }
 
     static Set<String> fromSpecification(List<String> lines) {
+        return fromSpecification(lines, null);
+    }
+
+    /**
+     * @param addition marcador do título da seção de acréscimo; {@code null} lê a seção {@code ### 3.2} de 0004
+     */
+    static Set<String> fromSpecification(List<String> lines, String addition) {
         Set<String> routes = new TreeSet<>();
         String target = null;
         boolean inSection = false;
         for (String line : lines) {
-            if (line.startsWith("### 3.2")) {
+            boolean start =
+                    addition == null ? line.startsWith("### 3.2") : line.startsWith("## ") && line.contains(addition);
+            if (start) {
                 inSection = true;
                 continue;
             }

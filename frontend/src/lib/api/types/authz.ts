@@ -76,6 +76,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/v1/subjects/{subject}/account-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra a situação da conta do titular no IdP (aviso do IdP, fase 0010)
+         * @description DISABLED e DELETED tiram o acesso do titular em todos os tenants (MEMBERSHIP_INACTIVE) e bloqueiam as ações do administrador local sobre o vínculo.
+         */
+        put: operations["accountStatus"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/v1/roles/{code}": {
         parameters: {
             query?: never;
@@ -684,6 +704,10 @@ export interface components {
             email?: string;
             /** @enum {string} */
             profileStatus?: "AVAILABLE" | "NOT_FOUND" | "UNAVAILABLE" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            accountStatus?: "ACTIVE" | "PENDING_VERIFICATION" | "DISABLED" | "DELETED";
+            /** @enum {string} */
+            accountDeletedBy?: "PLATFORM" | "USER";
         };
         DefaultTenantRequest: {
             tenant: string;
@@ -716,6 +740,14 @@ export interface components {
             deletedAt?: string;
             /** Format: int64 */
             version?: number;
+        };
+        AccountStatusRequest: {
+            /** @enum {string} */
+            status: "ACTIVE" | "PENDING_VERIFICATION" | "DISABLED" | "DELETED";
+            /** @enum {string} */
+            deletedBy?: "PLATFORM" | "USER";
+            /** Format: date-time */
+            changedAt: string;
         };
         SyncFeature: {
             code: string;
@@ -909,7 +941,7 @@ export interface components {
             /** Format: date-time */
             occurredAt?: string;
             /** @enum {string} */
-            type?: "TENANT_CREATED" | "TENANT_UPDATED" | "TENANT_SUSPENDED" | "TENANT_ACTIVATED" | "TENANT_DELETED" | "TENANT_MODULE_ENABLED" | "TENANT_MODULE_DISABLED" | "MODULE_CREATED" | "MODULE_UPDATED" | "MODULE_DELETED" | "FEATURE_CREATED" | "FEATURE_UPDATED" | "FEATURE_DELETED" | "CATALOG_SYNCHRONIZED" | "ROLE_CREATED" | "ROLE_UPDATED" | "ROLE_DELETED" | "MEMBERSHIP_CREATED" | "MEMBERSHIP_ROLES_CHANGED" | "MEMBERSHIP_UPDATED" | "MEMBERSHIP_SUSPENDED" | "MEMBERSHIP_REACTIVATED" | "MEMBERSHIP_REMOVED" | "PRIVILEGE_ESCALATION_DENIED" | "TENANT_TOKEN_ISSUED" | "TENANT_TOKEN_DENIED" | "KEY_ROTATED" | "SUBJECT_ERASED" | "USER_INVITED";
+            type?: "TENANT_CREATED" | "TENANT_UPDATED" | "TENANT_SUSPENDED" | "TENANT_ACTIVATED" | "TENANT_DELETED" | "TENANT_MODULE_ENABLED" | "TENANT_MODULE_DISABLED" | "MODULE_CREATED" | "MODULE_UPDATED" | "MODULE_DELETED" | "FEATURE_CREATED" | "FEATURE_UPDATED" | "FEATURE_DELETED" | "CATALOG_SYNCHRONIZED" | "ROLE_CREATED" | "ROLE_UPDATED" | "ROLE_DELETED" | "MEMBERSHIP_CREATED" | "MEMBERSHIP_ROLES_CHANGED" | "MEMBERSHIP_UPDATED" | "MEMBERSHIP_SUSPENDED" | "MEMBERSHIP_REACTIVATED" | "MEMBERSHIP_REMOVED" | "PRIVILEGE_ESCALATION_DENIED" | "TENANT_TOKEN_ISSUED" | "TENANT_TOKEN_DENIED" | "KEY_ROTATED" | "SUBJECT_ERASED" | "SUBJECT_ACCOUNT_STATUS_CHANGED" | "USER_INVITED";
             /** @enum {string} */
             outcome?: "SUCCESS" | "FAILURE";
             /** Format: uuid */
@@ -1160,6 +1192,30 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["TenantResponse"];
                 };
+            };
+        };
+    };
+    accountStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subject: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2069,7 +2125,7 @@ export interface operations {
         parameters: {
             query: {
                 subject?: string;
-                type?: "TENANT_CREATED" | "TENANT_UPDATED" | "TENANT_SUSPENDED" | "TENANT_ACTIVATED" | "TENANT_DELETED" | "TENANT_MODULE_ENABLED" | "TENANT_MODULE_DISABLED" | "MODULE_CREATED" | "MODULE_UPDATED" | "MODULE_DELETED" | "FEATURE_CREATED" | "FEATURE_UPDATED" | "FEATURE_DELETED" | "CATALOG_SYNCHRONIZED" | "ROLE_CREATED" | "ROLE_UPDATED" | "ROLE_DELETED" | "MEMBERSHIP_CREATED" | "MEMBERSHIP_ROLES_CHANGED" | "MEMBERSHIP_UPDATED" | "MEMBERSHIP_SUSPENDED" | "MEMBERSHIP_REACTIVATED" | "MEMBERSHIP_REMOVED" | "PRIVILEGE_ESCALATION_DENIED" | "TENANT_TOKEN_ISSUED" | "TENANT_TOKEN_DENIED" | "KEY_ROTATED" | "SUBJECT_ERASED" | "USER_INVITED";
+                type?: "TENANT_CREATED" | "TENANT_UPDATED" | "TENANT_SUSPENDED" | "TENANT_ACTIVATED" | "TENANT_DELETED" | "TENANT_MODULE_ENABLED" | "TENANT_MODULE_DISABLED" | "MODULE_CREATED" | "MODULE_UPDATED" | "MODULE_DELETED" | "FEATURE_CREATED" | "FEATURE_UPDATED" | "FEATURE_DELETED" | "CATALOG_SYNCHRONIZED" | "ROLE_CREATED" | "ROLE_UPDATED" | "ROLE_DELETED" | "MEMBERSHIP_CREATED" | "MEMBERSHIP_ROLES_CHANGED" | "MEMBERSHIP_UPDATED" | "MEMBERSHIP_SUSPENDED" | "MEMBERSHIP_REACTIVATED" | "MEMBERSHIP_REMOVED" | "PRIVILEGE_ESCALATION_DENIED" | "TENANT_TOKEN_ISSUED" | "TENANT_TOKEN_DENIED" | "KEY_ROTATED" | "SUBJECT_ERASED" | "SUBJECT_ACCOUNT_STATUS_CHANGED" | "USER_INVITED";
                 from?: string;
                 to?: string;
                 pageable: components["schemas"]["Pageable"];
@@ -2227,7 +2283,7 @@ export interface operations {
             query: {
                 tenantId?: string;
                 subject?: string;
-                type?: "TENANT_CREATED" | "TENANT_UPDATED" | "TENANT_SUSPENDED" | "TENANT_ACTIVATED" | "TENANT_DELETED" | "TENANT_MODULE_ENABLED" | "TENANT_MODULE_DISABLED" | "MODULE_CREATED" | "MODULE_UPDATED" | "MODULE_DELETED" | "FEATURE_CREATED" | "FEATURE_UPDATED" | "FEATURE_DELETED" | "CATALOG_SYNCHRONIZED" | "ROLE_CREATED" | "ROLE_UPDATED" | "ROLE_DELETED" | "MEMBERSHIP_CREATED" | "MEMBERSHIP_ROLES_CHANGED" | "MEMBERSHIP_UPDATED" | "MEMBERSHIP_SUSPENDED" | "MEMBERSHIP_REACTIVATED" | "MEMBERSHIP_REMOVED" | "PRIVILEGE_ESCALATION_DENIED" | "TENANT_TOKEN_ISSUED" | "TENANT_TOKEN_DENIED" | "KEY_ROTATED" | "SUBJECT_ERASED" | "USER_INVITED";
+                type?: "TENANT_CREATED" | "TENANT_UPDATED" | "TENANT_SUSPENDED" | "TENANT_ACTIVATED" | "TENANT_DELETED" | "TENANT_MODULE_ENABLED" | "TENANT_MODULE_DISABLED" | "MODULE_CREATED" | "MODULE_UPDATED" | "MODULE_DELETED" | "FEATURE_CREATED" | "FEATURE_UPDATED" | "FEATURE_DELETED" | "CATALOG_SYNCHRONIZED" | "ROLE_CREATED" | "ROLE_UPDATED" | "ROLE_DELETED" | "MEMBERSHIP_CREATED" | "MEMBERSHIP_ROLES_CHANGED" | "MEMBERSHIP_UPDATED" | "MEMBERSHIP_SUSPENDED" | "MEMBERSHIP_REACTIVATED" | "MEMBERSHIP_REMOVED" | "PRIVILEGE_ESCALATION_DENIED" | "TENANT_TOKEN_ISSUED" | "TENANT_TOKEN_DENIED" | "KEY_ROTATED" | "SUBJECT_ERASED" | "SUBJECT_ACCOUNT_STATUS_CHANGED" | "USER_INVITED";
                 from?: string;
                 to?: string;
                 pageable: components["schemas"]["Pageable"];

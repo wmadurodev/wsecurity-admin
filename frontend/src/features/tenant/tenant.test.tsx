@@ -314,3 +314,101 @@ describe('detalhe do membro', () => {
     expect(screen.getByText('Dados do IdP indisponíveis no momento')).toBeInTheDocument()
   })
 })
+
+describe('situação da conta no IdP (fase 0010)', () => {
+  const disabled = { ...withProfile, accountStatus: 'DISABLED' }
+
+  it.each([
+    [{ accountStatus: 'DISABLED' }, 'Desativado pela plataforma'],
+    [{ accountStatus: 'DELETED', accountDeletedBy: 'PLATFORM' }, 'Excluído pela plataforma'],
+    [{ accountStatus: 'DELETED', accountDeletedBy: 'USER' }, 'Conta excluída pelo usuário'],
+  ])('a lista mostra a situação da conta no lugar do status do vínculo (%o)', async (account, label) => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(http.get(`${API}/members`, () => HttpResponse.json(page([{ ...withProfile, ...account }]))))
+    renderAt('/t/padaria/members')
+    expect(await screen.findByText(label)).toBeInTheDocument()
+    expect(screen.getByText('bruno@exemplo.com')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).queryByText('Ativo')).not.toBeInTheDocument()
+  })
+
+  it('conta ativa continua com o status do vínculo', async () => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(http.get(`${API}/members`, () => HttpResponse.json(page([{ ...withProfile, accountStatus: 'ACTIVE' }]))))
+    renderAt('/t/padaria/members')
+    expect(await screen.findByText('Ativo')).toBeInTheDocument()
+  })
+
+  it('para o dono, o detalhe da conta desativada explica e não oferece ações', async () => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(http.get(`${API}/members/${SUB}`, () => HttpResponse.json(disabled, { headers: { ETag: '"3"' } })))
+    renderAt(`/t/padaria/members/${SUB}`)
+    expect(await screen.findByText(/foi desativada pelo administrador da plataforma/)).toBeInTheDocument()
+    expect(screen.getByText('Desativado pela plataforma')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Suspender' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remover do tenant' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Salvar papéis' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Definir expiração' })).not.toBeInTheDocument()
+    expect(screen.getByText('owner')).toBeInTheDocument()
+    expect(screen.queryByText(/você ainda pode alterar/)).not.toBeInTheDocument()
+  })
+
+  it('o administrador da plataforma vê o aviso e continua com as ações', async () => {
+    withSession(adminSession)
+    stubTenantArea()
+    server.use(
+      http.get(`${API}/members/${SUB}`, () =>
+        HttpResponse.json(
+          { ...withProfile, accountStatus: 'DELETED', accountDeletedBy: 'PLATFORM' },
+          { headers: { ETag: '"3"' } },
+        ),
+      ),
+    )
+    renderAt(`/t/padaria/members/${SUB}`)
+    expect(await screen.findByText(/foi excluída pelo administrador da plataforma/)).toBeInTheDocument()
+    expect(screen.getByText(/você ainda pode alterar ou remover este vínculo/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Remover do tenant' })).toBeInTheDocument()
+  })
+
+  it('conta anonimizada mostra o sub com o aviso de dados removidos', async () => {
+    withSession(ownerSession)
+    stubTenantArea()
+    server.use(
+      http.get(`${API}/members`, () =>
+        HttpResponse.json(
+          page([{ ...member, profileStatus: 'NOT_FOUND', accountStatus: 'DELETED', accountDeletedBy: 'USER' }]),
+        ),
+      ),
+    )
+    renderAt('/t/padaria/members')
+    expect(await screen.findByText('Dados pessoais removidos após a exclusão')).toBeInTheDocument()
+    expect(screen.queryByText('Usuário não encontrado no IdP')).not.toBeInTheDocument()
+  })
+
+  it('o 409 member-account-inactive recarrega o detalhe com a situação nova', async () => {
+    withSession(ownerSession)
+    stubTenantArea()
+    let calls = 0
+    server.use(
+      http.get(`${API}/members/${SUB}`, () => {
+        calls += 1
+        return HttpResponse.json(calls === 1 ? withProfile : disabled, { headers: { ETag: '"3"' } })
+      }),
+      http.post(`${API}/members/${SUB}/suspend`, () =>
+        problem(409, {
+          type: 'https://wsecurity.dev/problems/member-account-inactive',
+          title: 'A conta do membro está desativada ou excluída',
+          accountStatus: 'DISABLED',
+        }),
+      ),
+    )
+    const user = userEvent.setup()
+    renderAt(`/t/padaria/members/${SUB}`)
+    await user.click(await screen.findByRole('button', { name: 'Suspender' }))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Suspender' }))
+    expect(await screen.findByText(/foi desativada pelo administrador da plataforma/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Suspender' })).not.toBeInTheDocument())
+  })
+})
