@@ -66,7 +66,9 @@ test('emissores e e-mails no endereço da rede', async ({ page, request }) => {
   const authz = await (await request.get(`${env.authz}/.well-known/oauth-authorization-server`)).json()
   expect(authz.issuer).toBe(env.authz)
 
-  test.skip(mailpit === '', 'E2E_MAILPIT_URL não definido')
+  // E-mail lido no Mailpit do wnotification pelo IP (fase 0012); o e2e-rede.sh deixa E2E_MAILPIT_URL vazio quando ele
+  // não está exposto na rede.
+  test.skip(mailpit === '', 'E2E_MAILPIT_URL vazio: Mailpit do wnotification não acessível pelo IP')
   const user = await createUser('rede-email')
   await page.goto(`${env.idp}/account/password/forgot`)
   await page.locator('#email').fill(user.email)
