@@ -114,3 +114,11 @@ navegador (Playwright) ou `curl` no ambiente do prompt indicado.
 | RNF-DOC-02 | M | implementado | `CLAUDE.md` |
 | RNF-DOC-03 | M | implementado | este documento |
 | RNF-DOC-04 | M | implementado | README do workspace raiz; tabelas de fases em `specification/README.md` e `prompts/README.md` |
+
+## Fase 0014 — cards de sistemas
+
+Especificação: `wsecurity-docs/specification/0014-system-cards`.
+
+| ID | Requisito | Onde | Validação |
+|----|-----------|------|-----------|
+| RF-CRD-06 | Endereço do módulo no console | `features/catalog/ModuleFormDialog.tsx` (campo "Endereço do sistema"), `ModuleDetailPage.tsx` (link), `api.ts` (`isSystemUrl`), `openapi/authz.json` e `src/lib/api/types/authz.ts` | `catalog.test.tsx` (regra do endereço, link no detalhe, editar e limpar, erro no cliente sem chamar a API, erro do servidor no campo) |

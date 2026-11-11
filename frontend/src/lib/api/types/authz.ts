@@ -134,7 +134,7 @@ export interface paths {
         delete: operations["deleteModule"];
         options?: never;
         head?: never;
-        /** Altera nome, descrição ou habilitação de um módulo */
+        /** Altera nome, descrição, habilitação ou endereço de um módulo */
         patch: operations["updateModule"];
         trace?: never;
     };
@@ -559,6 +559,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/v1/subjects/{subject}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Módulos que o titular pode acessar (fase 0014)
+         * @description Um item por módulo habilitado em que o titular tem ao menos uma permissão efetiva em algum tenant ativo (vínculo ativo, conta ativa, módulo contratado). Usado pelo IdP nos cards da página inicial. Lista vazia se não houver.
+         */
+        get: operations["modules_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/v1/keys": {
         parameters: {
             query?: never;
@@ -759,6 +779,7 @@ export interface components {
             name: string;
             description?: string;
             features: components["schemas"]["SyncFeature"][];
+            url?: string;
         };
         ModuleResponse: {
             code?: string;
@@ -766,6 +787,7 @@ export interface components {
             description?: string;
             enabled?: boolean;
             system?: boolean;
+            url?: string;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -853,6 +875,7 @@ export interface components {
             name: string;
             description?: string;
             enabled?: boolean;
+            url?: string;
         };
         CreateFeature: {
             code: string;
@@ -910,6 +933,7 @@ export interface components {
             name?: string;
             description?: string;
             enabled?: boolean;
+            url?: string;
         };
         UpdateFeature: {
             name?: string;
@@ -984,6 +1008,13 @@ export interface components {
             enabledAt?: string;
             enabledBy?: string;
             implicit?: boolean;
+        };
+        SubjectModuleResponse: {
+            code?: string;
+            name?: string;
+            description?: string;
+            url?: string;
+            system?: boolean;
         };
         PageResponseModuleResponse: {
             content?: components["schemas"]["ModuleResponse"][];
@@ -2254,6 +2285,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TenantModuleResponse"][];
+                };
+            };
+        };
+    };
+    modules_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subject: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SubjectModuleResponse"][];
                 };
             };
         };

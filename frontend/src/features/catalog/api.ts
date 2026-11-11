@@ -75,3 +75,25 @@ export async function listAllFeatures(): Promise<(Feature & { moduleName: string
   )
   return features.flat()
 }
+
+/**
+ * Endereço do sistema de um módulo (fase 0014, RF-CRD-01/RF-CRD-06): URL absoluta http ou https, com host, sem
+ * usuário/senha nem #fragmento, até 2048 caracteres. A autorização valida de novo.
+ */
+export function isSystemUrl(value: string): boolean {
+  if (value.length > 2048 || value !== value.trim()) {
+    return false
+  }
+  try {
+    const url = new URL(value)
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      url.hostname !== '' &&
+      url.username === '' &&
+      url.password === '' &&
+      !value.includes('#')
+    )
+  } catch {
+    return false
+  }
+}

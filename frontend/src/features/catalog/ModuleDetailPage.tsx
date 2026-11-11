@@ -77,6 +77,19 @@ export function ModuleDetailPage() {
         {module.data.description && (
           <p className="max-w-2xl text-sm text-muted-foreground">{module.data.description}</p>
         )}
+        {module.data.url && (
+          <p className="text-sm">
+            <span className="text-muted-foreground">Endereço do sistema: </span>
+            <a
+              href={module.data.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {module.data.url}
+            </a>
+          </p>
+        )}
         {!system && (
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>

@@ -229,6 +229,13 @@ make e2e-admin TESTES=jornada-2    # só os arquivos cujo nome contém o filtro
 | `/login-error` com `invalid_scope` | O recuo de escopo (DEC-03) só trata `invalid_scope` uma vez por tentativa e só para `wsecurity.admin`. Se ele aparecer de novo, o cliente do console no IdP perdeu um dos escopos `openid profile email` ou o registro `wsecurity-basic` foi alterado: rode `make configurar-idp` e confira os escopos do cliente. |
 | Tela em branco e erro de CSP no console do navegador | Algo tentou script ou estilo inline, ou `eval` (`default-src 'self'`, sem `unsafe-inline` nem `unsafe-eval`). Componentes que injetam `<style>` (Radix) não podem ser usados (DEC-15), e o zod roda com `jitless`. No `npm run dev` o Vite injeta estilos: use o build do Maven para conferir a CSP. |
 
+## Endereço dos sistemas (fase 0014)
+
+Em **Plataforma → Módulos**, o formulário do módulo tem o campo opcional **"Endereço do sistema"** (`url` do módulo na
+autorização: `http`/`https` completo, sem usuário, senha ou `#`). Com ele, o sistema vira um card na página inicial do
+IdP para quem tem acesso ao módulo. Limpar o campo remove o endereço. O detalhe do módulo mostra o endereço como link.
+O módulo `core` é de sistema e não tem endereço; o console aparece como card próprio no IdP para quem administra.
+
 ## Proxy das APIs
 
 A SPA chama as APIs só pelo BFF, na mesma origem. O proxy repassa **apenas** as rotas de 04 §3.2 da especificação

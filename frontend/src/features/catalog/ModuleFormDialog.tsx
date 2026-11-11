@@ -12,13 +12,19 @@ import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle } from '@/
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
-import { catalogKeys, createModule, MODULE_CODE, type Module, updateModule } from './api'
+import { catalogKeys, createModule, isSystemUrl, MODULE_CODE, type Module, updateModule } from './api'
 
 const schema = z.object({
   code: z.string().regex(MODULE_CODE, 'De 2 a 31 caracteres: minúsculas, números e hífen, começando por letra.'),
   name: z.string().trim().min(1, 'Informe o nome.').max(200, 'Use no máximo 200 caracteres.'),
   description: z.string().max(2000, 'Use no máximo 2000 caracteres.'),
   enabled: z.boolean(),
+  url: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || isSystemUrl(value), {
+      message: 'Use um endereço http ou https completo (ex.: https://sistema.exemplo.com), sem usuário, senha ou #.',
+    }),
 })
 type Values = z.infer<typeof schema>
 
@@ -32,6 +38,7 @@ export function ModuleFormDialog({ module, onClose }: { module?: Module; onClose
       name: module?.name ?? '',
       description: module?.description ?? '',
       enabled: module?.enabled !== false,
+      url: module?.url ?? '',
     },
   })
   const save = useMutation({
@@ -41,8 +48,10 @@ export function ModuleFormDialog({ module, onClose }: { module?: Module; onClose
             name: values.name.trim(),
             description: values.description,
             enabled: values.enabled,
+            // Vazio remove o endereço (fase 0014).
+            url: values.url,
           })
-        : createModule({ ...values, name: values.name.trim() }),
+        : createModule({ ...values, name: values.name.trim(), url: values.url || undefined }),
     onSuccess: async (saved) => {
       showSuccess(module ? 'Módulo atualizado.' : 'Módulo criado.')
       await queryClient.invalidateQueries({ queryKey: catalogKeys.all })
@@ -77,6 +86,13 @@ export function ModuleFormDialog({ module, onClose }: { module?: Module; onClose
           name="description"
           label="Descrição"
           render={(field, props) => <Textarea rows={3} {...field} {...props} />}
+        />
+        <FormField
+          control={form.control}
+          name="url"
+          label="Endereço do sistema"
+          description="Opcional. Vira o card do sistema na página inicial do IdP para quem tem acesso (ex.: https://sistema.exemplo.com)."
+          render={(field, props) => <Input type="url" inputMode="url" placeholder="https://" {...field} {...props} />}
         />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...form.register('enabled')} />

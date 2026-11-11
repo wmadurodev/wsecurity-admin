@@ -601,7 +601,7 @@
         "tags": [
           "Catálogo"
         ],
-        "summary": "Altera nome, descrição ou habilitação de um módulo",
+        "summary": "Altera nome, descrição, habilitação ou endereço de um módulo",
         "operationId": "updateModule",
         "parameters": [
           {
@@ -2031,6 +2031,41 @@
         }
       }
     },
+    "/api/admin/v1/subjects/{subject}/modules": {
+      "get": {
+        "tags": [
+          "Titulares"
+        ],
+        "summary": "Módulos que o titular pode acessar (fase 0014)",
+        "description": "Um item por módulo habilitado em que o titular tem ao menos uma permissão efetiva em algum tenant ativo (vínculo ativo, conta ativa, módulo contratado). Usado pelo IdP nos cards da página inicial. Lista vazia se não houver.",
+        "operationId": "modules_1",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubjectModuleResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/v1/keys": {
       "get": {
         "tags": [
@@ -2606,6 +2641,9 @@
             },
             "maxItems": 500,
             "minItems": 0
+          },
+          "url": {
+            "type": "string"
           }
         },
         "required": [
@@ -2630,6 +2668,9 @@
           },
           "system": {
             "type": "boolean"
+          },
+          "url": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
@@ -2958,6 +2999,9 @@
           },
           "enabled": {
             "type": "boolean"
+          },
+          "url": {
+            "type": "string"
           }
         },
         "required": [
@@ -3124,6 +3168,9 @@
           },
           "enabled": {
             "type": "boolean"
+          },
+          "url": {
+            "type": "string"
           }
         }
       },
@@ -3347,6 +3394,26 @@
             "type": "string"
           },
           "implicit": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SubjectModuleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "system": {
             "type": "boolean"
           }
         }
